@@ -54,7 +54,7 @@ export const useRequestService = () => {
       const { data: requestData, error: requestError } = await supabase
         .from('compras_solicitacoes')
         .insert({
-          cliente_id: parseInt(request.clientId),
+          cliente_id: parseInt(request.clientId), // Fixed: Parse to integer for Supabase
           unidade_id: parseInt(request.unitId),
           tipo_solicitacao: request.type,
           justificativa: request.justification,

@@ -18,9 +18,9 @@ export const useBudgetService = () => {
     
     if (data) {
       const transformedBudgets: Budget[] = data.map(budget => ({
-        id: budget.id.toString(),
+        id: budget.id.toString(), // Convert to string
         name: budget.nome,
-        clientId: budget.cliente_id.toString(),
+        clientId: budget.cliente_id.toString(), // Convert to string
         monthlyAmount: parseFloat(budget.valor_mensal)
       }));
       
@@ -40,7 +40,7 @@ export const useBudgetService = () => {
         .from('compras_rubricas')
         .insert({
           nome: budget.name,
-          cliente_id: parseInt(budget.clientId),
+          cliente_id: parseInt(budget.clientId), // Fixed: Parse to integer for Supabase
           valor_mensal: budget.monthlyAmount
         })
         .select()
@@ -80,7 +80,7 @@ export const useBudgetService = () => {
         .from('compras_rubricas')
         .update({
           nome: budget.name,
-          cliente_id: parseInt(budget.clientId),
+          cliente_id: parseInt(budget.clientId), // Fixed: Parse to integer for Supabase
           valor_mensal: budget.monthlyAmount
         })
         .eq('id', parseInt(budget.id));

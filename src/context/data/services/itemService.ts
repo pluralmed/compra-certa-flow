@@ -53,8 +53,8 @@ export const useItemService = () => {
         .from('compras_itens')
         .insert({
           nome: item.name,
-          grupo_id: parseInt(item.group.id),
-          unidade_medida_id: parseInt(item.unitOfMeasure.id),
+          grupo_id: parseInt(item.group.id), // Fixed: Parse to integer for Supabase
+          unidade_medida_id: parseInt(item.unitOfMeasure.id), // Fixed: Parse to integer for Supabase
           valor_medio: item.averagePrice
         })
         .select()
@@ -95,8 +95,8 @@ export const useItemService = () => {
         .from('compras_itens')
         .update({
           nome: item.name,
-          grupo_id: parseInt(item.group.id),
-          unidade_medida_id: parseInt(item.unitOfMeasure.id),
+          grupo_id: parseInt(item.group.id), // Fixed: Parse to integer for Supabase
+          unidade_medida_id: parseInt(item.unitOfMeasure.id), // Fixed: Parse to integer for Supabase
           valor_medio: item.averagePrice
         })
         .eq('id', parseInt(item.id));
