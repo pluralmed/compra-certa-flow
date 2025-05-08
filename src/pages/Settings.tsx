@@ -56,6 +56,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { ItemGroup, UnitOfMeasure } from '@/context/data/types';
 
 const Settings = () => {
   const { user } = useAuth();
@@ -113,9 +114,9 @@ const Settings = () => {
   const [budgetClientId, setBudgetClientId] = useState('');
   const [budgetMonthlyAmount, setBudgetMonthlyAmount] = useState('');
   
-  const [itemGroup, setItemGroup] = useState<'Materiais' | 'Equipamentos' | 'Serviços' | 'Outros'>('Materiais');
   const [itemName, setItemName] = useState('');
-  const [itemUnitOfMeasure, setItemUnitOfMeasure] = useState<'UN' | 'CX' | 'KG' | 'L' | 'M' | 'M²' | 'M³' | 'PCT'>('UN');
+  const [itemGroupName, setItemGroupName] = useState<string>('Materiais');
+  const [itemUnitOfMeasureName, setItemUnitOfMeasureName] = useState<string>('UN');
   const [itemAveragePrice, setItemAveragePrice] = useState('');
   
   // Redirect if not admin
@@ -141,9 +142,9 @@ const Settings = () => {
   };
   
   const resetItemForm = () => {
-    setItemGroup('Materiais');
+    setItemGroupName('Materiais');
     setItemName('');
-    setItemUnitOfMeasure('UN');
+    setItemUnitOfMeasureName('UN');
     setItemAveragePrice('');
   };
   
@@ -269,10 +270,22 @@ const Settings = () => {
   
   // Item handlers
   const handleAddItem = () => {
+    // Create proper ItemGroup and UnitOfMeasure objects
+    const group: ItemGroup = {
+      id: "1", // This would normally come from your itemGroups data
+      name: itemGroupName
+    };
+    
+    const unitOfMeasure: UnitOfMeasure = {
+      id: "1", // This would normally come from your unitsOfMeasure data
+      name: itemUnitOfMeasureName,
+      abbreviation: itemUnitOfMeasureName
+    };
+    
     addItem({
-      group: itemGroup,
       name: itemName,
-      unitOfMeasure: itemUnitOfMeasure,
+      group,
+      unitOfMeasure,
       averagePrice: parseFloat(itemAveragePrice),
     });
     resetItemForm();
@@ -281,11 +294,24 @@ const Settings = () => {
   
   const handleUpdateItem = () => {
     if (!selectedItem) return;
+    
+    // Create proper ItemGroup and UnitOfMeasure objects
+    const group: ItemGroup = {
+      id: selectedItem.group.id,
+      name: itemGroupName
+    };
+    
+    const unitOfMeasure: UnitOfMeasure = {
+      id: selectedItem.unitOfMeasure.id,
+      name: itemUnitOfMeasureName,
+      abbreviation: itemUnitOfMeasureName
+    };
+    
     updateItem({
       ...selectedItem,
-      group: itemGroup,
       name: itemName,
-      unitOfMeasure: itemUnitOfMeasure,
+      group,
+      unitOfMeasure,
       averagePrice: parseFloat(itemAveragePrice),
     });
     resetItemForm();
@@ -300,9 +326,9 @@ const Settings = () => {
   
   const openEditItemDialog = (item: any) => {
     setSelectedItem(item);
-    setItemGroup(item.group);
+    setItemGroupName(item.group.name);
     setItemName(item.name);
-    setItemUnitOfMeasure(item.unitOfMeasure);
+    setItemUnitOfMeasureName(item.unitOfMeasure.abbreviation);
     setItemAveragePrice(item.averagePrice.toString());
     setIsEditItemOpen(true);
   };
@@ -670,10 +696,8 @@ const Settings = () => {
                     <div className="space-y-2">
                       <Label htmlFor="itemGroup">Grupo</Label>
                       <Select 
-                        value={itemGroup} 
-                        onValueChange={(value: 'Materiais' | 'Equipamentos' | 'Serviços' | 'Outros') => 
-                          setItemGroup(value)
-                        }
+                        value={itemGroupName} 
+                        onValueChange={(value: string) => setItemGroupName(value)}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Selecione o grupo" />
@@ -698,10 +722,8 @@ const Settings = () => {
                     <div className="space-y-2">
                       <Label htmlFor="itemUnitOfMeasure">Unidade de Medida</Label>
                       <Select 
-                        value={itemUnitOfMeasure} 
-                        onValueChange={(value: 'UN' | 'CX' | 'KG' | 'L' | 'M' | 'M²' | 'M³' | 'PCT') => 
-                          setItemUnitOfMeasure(value)
-                        }
+                        value={itemUnitOfMeasureName} 
+                        onValueChange={(value: string) => setItemUnitOfMeasureName(value)}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Selecione a unidade" />
@@ -752,9 +774,9 @@ const Settings = () => {
                   <TableBody>
                     {items.map(item => (
                       <TableRow key={item.id}>
-                        <TableCell>{item.group}</TableCell>
+                        <TableCell>{item.group.name}</TableCell>
                         <TableCell className="font-medium">{item.name}</TableCell>
-                        <TableCell>{item.unitOfMeasure}</TableCell>
+                        <TableCell>{item.unitOfMeasure.abbreviation}</TableCell>
                         <TableCell>{formatCurrency(item.averagePrice)}</TableCell>
                         <TableCell className="text-right space-x-2">
                           <Button 
@@ -989,10 +1011,8 @@ const Settings = () => {
             <div className="space-y-2">
               <Label htmlFor="editItemGroup">Grupo</Label>
               <Select 
-                value={itemGroup} 
-                onValueChange={(value: 'Materiais' | 'Equipamentos' | 'Serviços' | 'Outros') => 
-                  setItemGroup(value)
-                }
+                value={itemGroupName} 
+                onValueChange={(value: string) => setItemGroupName(value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione o grupo" />
@@ -1017,10 +1037,8 @@ const Settings = () => {
             <div className="space-y-2">
               <Label htmlFor="editItemUnitOfMeasure">Unidade de Medida</Label>
               <Select 
-                value={itemUnitOfMeasure} 
-                onValueChange={(value: 'UN' | 'CX' | 'KG' | 'L' | 'M' | 'M²' | 'M³' | 'PCT') => 
-                  setItemUnitOfMeasure(value)
-                }
+                value={itemUnitOfMeasureName} 
+                onValueChange={(value: string) => setItemUnitOfMeasureName(value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione a unidade" />
