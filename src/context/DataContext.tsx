@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -360,7 +359,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   };
 
   const getItemById = (id: string) => {
-    return items.find(i => i.id === i);
+    return items.find(i => i.id === id);
   };
 
   const getUnitsByClientId = (clientId: string) => {

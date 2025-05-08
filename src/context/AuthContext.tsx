@@ -13,7 +13,7 @@ const MOCK_USERS = [
     lastName: 'Sistema',
     whatsapp: '(11) 9 9999-9999',
     sector: 'Tecnologia',
-    role: 'admin'
+    role: 'admin' as const // Adding type assertion to ensure TypeScript recognizes this as a literal
   },
   {
     id: '2',
@@ -23,7 +23,7 @@ const MOCK_USERS = [
     lastName: 'Padrão',
     whatsapp: '(11) 9 8888-8888',
     sector: 'Engenharia Civil',
-    role: 'normal'
+    role: 'normal' as const // Adding type assertion to ensure TypeScript recognizes this as a literal
   }
 ];
 
@@ -37,14 +37,19 @@ interface User {
   role: 'admin' | 'normal';
 }
 
+// Creating a type that includes password for internal use
+interface UserWithPassword extends User {
+  password: string;
+}
+
 interface AuthContextProps {
   user: User | null;
   users: User[];
   loading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
-  addUser: (user: Omit<User, 'id'>) => void;
-  updateUser: (user: User) => void;
+  addUser: (user: Omit<UserWithPassword, 'id'>) => void;
+  updateUser: (user: UserWithPassword) => void;
   deleteUser: (id: string) => void;
 }
 
@@ -93,7 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     navigate('/login');
   };
 
-  const addUser = (newUser: Omit<User, 'id'>) => {
+  const addUser = (newUser: Omit<UserWithPassword, 'id'>) => {
     const id = (users.length + 1).toString();
     const userWithId = { ...newUser, id };
     setUsers([...users, userWithId]);
@@ -103,7 +108,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
-  const updateUser = (updatedUser: User) => {
+  const updateUser = (updatedUser: UserWithPassword) => {
     setUsers(users.map(u => u.id === updatedUser.id ? updatedUser : u));
     toast({
       title: "Usuário atualizado",
