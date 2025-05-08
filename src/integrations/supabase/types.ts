@@ -209,6 +209,315 @@ export type Database = {
         }
         Relationships: []
       }
+      compras_clientes: {
+        Row: {
+          data_criacao: string | null
+          id: number
+          municipio: string
+          nome: string
+        }
+        Insert: {
+          data_criacao?: string | null
+          id?: number
+          municipio: string
+          nome: string
+        }
+        Update: {
+          data_criacao?: string | null
+          id?: number
+          municipio?: string
+          nome?: string
+        }
+        Relationships: []
+      }
+      compras_grupos_itens: {
+        Row: {
+          data_criacao: string | null
+          id: number
+          nome: string
+        }
+        Insert: {
+          data_criacao?: string | null
+          id?: number
+          nome: string
+        }
+        Update: {
+          data_criacao?: string | null
+          id?: number
+          nome?: string
+        }
+        Relationships: []
+      }
+      compras_itens: {
+        Row: {
+          data_criacao: string | null
+          grupo_id: number
+          id: number
+          nome: string
+          unidade_medida_id: number
+          valor_medio: number
+        }
+        Insert: {
+          data_criacao?: string | null
+          grupo_id: number
+          id?: number
+          nome: string
+          unidade_medida_id: number
+          valor_medio: number
+        }
+        Update: {
+          data_criacao?: string | null
+          grupo_id?: number
+          id?: number
+          nome?: string
+          unidade_medida_id?: number
+          valor_medio?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compras_itens_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "compras_grupos_itens"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compras_itens_unidade_medida_id_fkey"
+            columns: ["unidade_medida_id"]
+            isOneToOne: false
+            referencedRelation: "compras_unidades_medida"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      compras_itens_solicitacao: {
+        Row: {
+          data_criacao: string | null
+          id: number
+          item_id: number
+          quantidade: number
+          solicitacao_id: number
+        }
+        Insert: {
+          data_criacao?: string | null
+          id?: number
+          item_id: number
+          quantidade: number
+          solicitacao_id: number
+        }
+        Update: {
+          data_criacao?: string | null
+          id?: number
+          item_id?: number
+          quantidade?: number
+          solicitacao_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compras_itens_solicitacao_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "compras_itens"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compras_itens_solicitacao_solicitacao_id_fkey"
+            columns: ["solicitacao_id"]
+            isOneToOne: false
+            referencedRelation: "compras_solicitacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      compras_rubricas: {
+        Row: {
+          cliente_id: number
+          data_criacao: string | null
+          id: number
+          nome: string
+          valor_mensal: number
+        }
+        Insert: {
+          cliente_id: number
+          data_criacao?: string | null
+          id?: number
+          nome: string
+          valor_mensal: number
+        }
+        Update: {
+          cliente_id?: number
+          data_criacao?: string | null
+          id?: number
+          nome?: string
+          valor_mensal?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compras_rubricas_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "compras_clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      compras_solicitacoes: {
+        Row: {
+          cliente_id: number
+          data_criacao: string | null
+          id: number
+          justificativa: string
+          prioridade: string
+          rubrica_id: number
+          status: string
+          tipo_solicitacao: string
+          unidade_id: number
+          usuario_id: number
+        }
+        Insert: {
+          cliente_id: number
+          data_criacao?: string | null
+          id?: number
+          justificativa: string
+          prioridade: string
+          rubrica_id: number
+          status?: string
+          tipo_solicitacao: string
+          unidade_id: number
+          usuario_id: number
+        }
+        Update: {
+          cliente_id?: number
+          data_criacao?: string | null
+          id?: number
+          justificativa?: string
+          prioridade?: string
+          rubrica_id?: number
+          status?: string
+          tipo_solicitacao?: string
+          unidade_id?: number
+          usuario_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compras_solicitacoes_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "compras_clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compras_solicitacoes_rubrica_id_fkey"
+            columns: ["rubrica_id"]
+            isOneToOne: false
+            referencedRelation: "compras_rubricas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compras_solicitacoes_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "compras_unidades"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compras_solicitacoes_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "compras_usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      compras_unidades: {
+        Row: {
+          cliente_id: number
+          data_criacao: string | null
+          id: number
+          nome: string
+        }
+        Insert: {
+          cliente_id: number
+          data_criacao?: string | null
+          id?: number
+          nome: string
+        }
+        Update: {
+          cliente_id?: number
+          data_criacao?: string | null
+          id?: number
+          nome?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compras_unidades_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "compras_clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      compras_unidades_medida: {
+        Row: {
+          data_criacao: string | null
+          id: number
+          nome: string
+          sigla: string
+        }
+        Insert: {
+          data_criacao?: string | null
+          id?: number
+          nome: string
+          sigla: string
+        }
+        Update: {
+          data_criacao?: string | null
+          id?: number
+          nome?: string
+          sigla?: string
+        }
+        Relationships: []
+      }
+      compras_usuarios: {
+        Row: {
+          data_criacao: string | null
+          email: string
+          id: number
+          nome: string
+          senha: string
+          setor: string
+          sobrenome: string
+          tipo_permissao: string
+          ultimo_login: string | null
+          whatsapp: string
+        }
+        Insert: {
+          data_criacao?: string | null
+          email: string
+          id?: number
+          nome: string
+          senha: string
+          setor: string
+          sobrenome: string
+          tipo_permissao: string
+          ultimo_login?: string | null
+          whatsapp: string
+        }
+        Update: {
+          data_criacao?: string | null
+          email?: string
+          id?: number
+          nome?: string
+          senha?: string
+          setor?: string
+          sobrenome?: string
+          tipo_permissao?: string
+          ultimo_login?: string | null
+          whatsapp?: string
+        }
+        Relationships: []
+      }
       connections: {
         Row: {
           created_at: string | null

@@ -2,30 +2,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
-
-// Mock user data - In a real app, this would come from an API
-const MOCK_USERS = [
-  {
-    id: '1',
-    email: 'admin@exemplo.com',
-    password: 'admin123',
-    name: 'Admin',
-    lastName: 'Sistema',
-    whatsapp: '(11) 9 9999-9999',
-    sector: 'Tecnologia',
-    role: 'admin' as const // Adding type assertion to ensure TypeScript recognizes this as a literal
-  },
-  {
-    id: '2',
-    email: 'usuario@exemplo.com',
-    password: 'user123',
-    name: 'Usuário',
-    lastName: 'Padrão',
-    whatsapp: '(11) 9 8888-8888',
-    sector: 'Engenharia Civil',
-    role: 'normal' as const // Adding type assertion to ensure TypeScript recognizes this as a literal
-  }
-];
+import { supabase } from '@/integrations/supabase/client';
 
 interface User {
   id: string;
@@ -57,10 +34,42 @@ const AuthContext = createContext<AuthContextProps | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [users, setUsers] = useState<User[]>(MOCK_USERS);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Fetch users from Supabase
+  const fetchUsers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('compras_usuarios')
+        .select('*');
+
+      if (error) throw error;
+
+      // Transform database users to our User interface
+      if (data) {
+        const transformedUsers: User[] = data.map(dbUser => ({
+          id: dbUser.id.toString(),
+          email: dbUser.email,
+          name: dbUser.nome,
+          lastName: dbUser.sobrenome,
+          whatsapp: dbUser.whatsapp,
+          sector: dbUser.setor,
+          role: dbUser.tipo_permissao as 'admin' | 'normal',
+        }));
+        setUsers(transformedUsers);
+      }
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar os usuários.",
+        variant: "destructive",
+      });
+    }
+  };
 
   // Check if user is logged in on mount
   useEffect(() => {
@@ -68,28 +77,60 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (storedUser) {
       setUser(JSON.parse(storedUser));
     }
+    fetchUsers();
     setLoading(false);
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     setLoading(true);
     
-    // In a real app, this would be an API call
-    const foundUser = MOCK_USERS.find(
-      u => u.email === email && u.password === password
-    );
-    
-    if (foundUser) {
-      // Remove password from user object
-      const { password, ...userWithoutPassword } = foundUser;
-      setUser(userWithoutPassword as User);
-      localStorage.setItem('user', JSON.stringify(userWithoutPassword));
+    try {
+      // Query the compras_usuarios table for login
+      const { data, error } = await supabase
+        .from('compras_usuarios')
+        .select('*')
+        .eq('email', email)
+        .eq('senha', password)
+        .single();
+      
+      if (error) throw error;
+      
+      if (data) {
+        const loggedInUser: User = {
+          id: data.id.toString(),
+          email: data.email,
+          name: data.nome,
+          lastName: data.sobrenome,
+          whatsapp: data.whatsapp,
+          sector: data.setor,
+          role: data.tipo_permissao as 'admin' | 'normal',
+        };
+        
+        setUser(loggedInUser);
+        localStorage.setItem('user', JSON.stringify(loggedInUser));
+        
+        // Update last login timestamp
+        await supabase
+          .from('compras_usuarios')
+          .update({ ultimo_login: new Date().toISOString() })
+          .eq('id', data.id);
+          
+        setLoading(false);
+        return true;
+      }
+      
       setLoading(false);
-      return true;
+      return false;
+    } catch (error) {
+      console.error('Login error:', error);
+      toast({
+        title: "Erro de login",
+        description: "Email ou senha incorretos.",
+        variant: "destructive",
+      });
+      setLoading(false);
+      return false;
     }
-    
-    setLoading(false);
-    return false;
   };
 
   const logout = () => {
@@ -98,31 +139,110 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     navigate('/login');
   };
 
-  const addUser = (newUser: Omit<UserWithPassword, 'id'>) => {
-    const id = (users.length + 1).toString();
-    const userWithId = { ...newUser, id };
-    setUsers([...users, userWithId]);
-    toast({
-      title: "Usuário criado",
-      description: `${newUser.name} ${newUser.lastName} foi adicionado com sucesso.`,
-    });
-  };
+  const addUser = async (newUser: Omit<UserWithPassword, 'id'>) => {
+    try {
+      const { data, error } = await supabase
+        .from('compras_usuarios')
+        .insert({
+          email: newUser.email,
+          nome: newUser.name,
+          sobrenome: newUser.lastName,
+          senha: newUser.password,
+          whatsapp: newUser.whatsapp,
+          setor: newUser.sector,
+          tipo_permissao: newUser.role,
+        })
+        .select()
+        .single();
 
-  const updateUser = (updatedUser: UserWithPassword) => {
-    setUsers(users.map(u => u.id === updatedUser.id ? updatedUser : u));
-    toast({
-      title: "Usuário atualizado",
-      description: `${updatedUser.name} ${updatedUser.lastName} foi atualizado com sucesso.`,
-    });
-  };
+      if (error) throw error;
 
-  const deleteUser = (id: string) => {
-    const userToDelete = users.find(u => u.id === id);
-    setUsers(users.filter(u => u.id !== id));
-    if (userToDelete) {
+      if (data) {
+        const userWithId: User = {
+          id: data.id.toString(),
+          email: data.email,
+          name: data.nome,
+          lastName: data.sobrenome,
+          whatsapp: data.whatsapp,
+          sector: data.setor,
+          role: data.tipo_permissao as 'admin' | 'normal',
+        };
+        
+        setUsers([...users, userWithId]);
+        
+        toast({
+          title: "Usuário criado",
+          description: `${newUser.name} ${newUser.lastName} foi adicionado com sucesso.`,
+        });
+      }
+    } catch (error) {
+      console.error('Error adding user:', error);
       toast({
-        title: "Usuário removido",
-        description: `${userToDelete.name} ${userToDelete.lastName} foi removido com sucesso.`,
+        title: "Erro",
+        description: "Não foi possível adicionar o usuário.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const updateUser = async (updatedUser: UserWithPassword) => {
+    try {
+      const { error } = await supabase
+        .from('compras_usuarios')
+        .update({
+          email: updatedUser.email,
+          nome: updatedUser.name,
+          sobrenome: updatedUser.lastName,
+          senha: updatedUser.password,
+          whatsapp: updatedUser.whatsapp,
+          setor: updatedUser.sector,
+          tipo_permissao: updatedUser.role,
+        })
+        .eq('id', updatedUser.id);
+
+      if (error) throw error;
+
+      setUsers(users.map(u => u.id === updatedUser.id ? updatedUser : u));
+      
+      toast({
+        title: "Usuário atualizado",
+        description: `${updatedUser.name} ${updatedUser.lastName} foi atualizado com sucesso.`,
+      });
+    } catch (error) {
+      console.error('Error updating user:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar o usuário.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const deleteUser = async (id: string) => {
+    try {
+      const userToDelete = users.find(u => u.id === id);
+      
+      const { error } = await supabase
+        .from('compras_usuarios')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setUsers(users.filter(u => u.id !== id));
+      
+      if (userToDelete) {
+        toast({
+          title: "Usuário removido",
+          description: `${userToDelete.name} ${userToDelete.lastName} foi removido com sucesso.`,
+        });
+      }
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível remover o usuário.",
+        variant: "destructive",
       });
     }
   };
