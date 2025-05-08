@@ -37,15 +37,15 @@ const RequestDetails = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { 
-    getRequestById, 
-    getClientById, 
-    getUnitById,
-    getBudgetById,
+    requests,
+    clients,
+    units,
+    budgets,
     items,
     updateRequestStatus,
   } = useData();
   
-  const request = getRequestById(id || '');
+  const request = requests.find(req => req.id === id);
   
   if (!request) {
     return (
@@ -59,9 +59,9 @@ const RequestDetails = () => {
     );
   }
   
-  const client = getClientById(request.clientId);
-  const unit = getUnitById(request.unitId);
-  const budget = getBudgetById(request.budgetId);
+  const client = clients.find(c => c.id === request.clientId);
+  const unit = units.find(u => u.id === request.unitId);
+  const budget = budgets.find(b => b.id === request.budgetId);
   
   const handleStatusChange = (newStatus: Status) => {
     if (user?.role !== 'admin') return;
@@ -171,9 +171,9 @@ const RequestDetails = () => {
                       return (
                         <TableRow key={requestItem.id}>
                           <TableCell className="font-medium">{item.name}</TableCell>
-                          <TableCell>{item.group}</TableCell>
+                          <TableCell>{item.group.name}</TableCell>
                           <TableCell className="text-center">{requestItem.quantity}</TableCell>
-                          <TableCell>{item.unitOfMeasure}</TableCell>
+                          <TableCell>{item.unitOfMeasure.name}</TableCell>
                           <TableCell>{formatCurrency(item.averagePrice)}</TableCell>
                           <TableCell>{formatCurrency(total)}</TableCell>
                         </TableRow>

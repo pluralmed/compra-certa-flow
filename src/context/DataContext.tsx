@@ -6,8 +6,23 @@ import { useAuth } from './AuthContext';
 
 // Define types for our data models
 export type RequestType = 'Aquisição' | 'Contratação';
-export type Status = 'Aguardando liberação' | 'Liberada' | 'Em análise' | 'Concluída' | 'Recusada';
-export type Priority = 'Alta' | 'Média' | 'Baixa';
+export type Status = 
+  'Aguardando liberação' | 
+  'Em cotação' | 
+  'Aguardando pagamento' | 
+  'Pagamento realizado' | 
+  'Aguardando entrega' | 
+  'Liberada' | 
+  'Em análise' | 
+  'Concluída' | 
+  'Recusada' | 
+  'Solicitação rejeitada';
+export type Priority = 
+  'Alta' | 
+  'Média' | 
+  'Baixa' | 
+  'Moderada' | 
+  'Urgente';
 
 export interface Client {
   id: string;
@@ -80,16 +95,19 @@ interface DataContextProps {
   addClient: (client: Omit<Client, 'id'>) => void;
   updateClient: (client: Client) => void;
   deleteClient: (id: string) => void;
+  getClientById: (id: string) => Client | undefined;
   
   // Units
   addUnit: (unit: Omit<Unit, 'id'>) => void;
   updateUnit: (unit: Unit) => void;
   deleteUnit: (id: string) => void;
+  getUnitById: (id: string) => Unit | undefined;
   
   // Budgets
   addBudget: (budget: Omit<Budget, 'id'>) => void;
   updateBudget: (budget: Budget) => void;
   deleteBudget: (id: string) => void;
+  getBudgetById: (id: string) => Budget | undefined;
   
   // Item Groups
   addItemGroup: (group: Omit<ItemGroup, 'id'>) => void;
@@ -110,6 +128,7 @@ interface DataContextProps {
   createRequest: (request: Omit<Request, 'id' | 'createdAt' | 'status'>) => Promise<string>;
   updateRequest: (request: Request) => void;
   deleteRequest: (id: string) => void;
+  updateRequestStatus: (id: string, status: Status) => void;
   
   // Loading states
   loading: boolean;
@@ -360,6 +379,21 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }
   };
   
+  // Get client by ID
+  const getClientById = (id: string) => {
+    return clients.find(client => client.id === id);
+  };
+
+  // Get unit by ID
+  const getUnitById = (id: string) => {
+    return units.find(unit => unit.id === id);
+  };
+
+  // Get budget by ID
+  const getBudgetById = (id: string) => {
+    return budgets.find(budget => budget.id === id);
+  };
+  
   // Add client
   const addClient = async (client: Omit<Client, 'id'>) => {
     try {
@@ -376,7 +410,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       
       if (data) {
         const newClient: Client = {
-          id: data.id.toString(), // Convert ID to string
+          id: data.id.toString(),
           name: data.nome,
           municipality: data.municipio
         };
@@ -473,9 +507,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       
       if (data) {
         const newUnit: Unit = {
-          id: data.id.toString(), // Convert ID to string
+          id: data.id.toString(),
           name: data.nome,
-          clientId: data.cliente_id.toString() // Convert cliente_id to string
+          clientId: data.cliente_id.toString()
         };
         
         setUnits([...units, newUnit]);
@@ -571,9 +605,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       
       if (data) {
         const newBudget: Budget = {
-          id: data.id.toString(), // Convert ID to string
+          id: data.id.toString(),
           name: data.nome,
-          clientId: data.cliente_id.toString(), // Convert cliente_id to string
+          clientId: data.cliente_id.toString(),
           monthlyAmount: parseFloat(data.valor_mensal)
         };
         
@@ -863,7 +897,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       
       if (data) {
         const newItem: Item = {
-          id: data.id.toString(), // Convert ID to string
+          id: data.id.toString(),
           name: data.nome,
           group: item.group,
           unitOfMeasure: item.unitOfMeasure,
@@ -984,19 +1018,19 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       
       // Create the transformed request for state update
       const newRequest: Request = {
-        id: requestData.id.toString(), // Convert ID to string
-        clientId: requestData.cliente_id.toString(), // Convert cliente_id to string
-        unitId: requestData.unidade_id.toString(), // Convert unidade_id to string
+        id: requestData.id.toString(),
+        clientId: requestData.cliente_id.toString(),
+        unitId: requestData.unidade_id.toString(),
         type: requestData.tipo_solicitacao as RequestType,
         justification: requestData.justificativa,
-        budgetId: requestData.rubrica_id.toString(), // Convert rubrica_id to string
+        budgetId: requestData.rubrica_id.toString(),
         priority: requestData.prioridade as Priority,
-        userId: requestData.usuario_id.toString(), // Convert usuario_id to string
+        userId: requestData.usuario_id.toString(),
         createdAt: requestData.data_criacao,
         status: requestData.status as Status,
         items: itemsData.map(item => ({
-          id: item.id.toString(), // Convert ID to string
-          itemId: item.item_id.toString(), // Convert item_id to string
+          id: item.id.toString(),
+          itemId: item.item_id.toString(),
           quantity: parseFloat(item.quantidade)
         }))
       };
@@ -1008,7 +1042,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         description: "Entraremos em contato em breve.",
       });
       
-      return requestData.id.toString(); // Convert ID to string for return value
+      return requestData.id.toString();
     } catch (error) {
       console.error("Error creating request:", error);
       toast({
@@ -1058,6 +1092,32 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }
   };
   
+  // Update request status
+  const updateRequestStatus = async (id: string, status: Status) => {
+    try {
+      const { error } = await supabase
+        .from('compras_solicitacoes')
+        .update({ status })
+        .eq('id', parseInt(id));
+      
+      if (error) throw error;
+      
+      setRequests(requests.map(r => r.id === id ? { ...r, status } : r));
+      
+      toast({
+        title: "Status atualizado",
+        description: `Status atualizado para: ${status}`,
+      });
+    } catch (error) {
+      console.error('Error updating request status:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar o status da solicitação.",
+        variant: "destructive",
+      });
+    }
+  };
+  
   // Delete request
   const deleteRequest = async (id: string) => {
     try {
@@ -1097,14 +1157,17 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       addClient,
       updateClient,
       deleteClient,
+      getClientById,
       
       addUnit,
       updateUnit,
       deleteUnit,
+      getUnitById,
       
       addBudget,
       updateBudget,
       deleteBudget,
+      getBudgetById,
       
       addItemGroup,
       updateItemGroup,
@@ -1121,6 +1184,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       createRequest,
       updateRequest,
       deleteRequest,
+      updateRequestStatus,
       
       loading,
       fetched
