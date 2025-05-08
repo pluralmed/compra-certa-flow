@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { useData, Status } from '@/context/DataContext';
+import { useData, Status } from '@/context/data/DataContext';
 import { Button } from '@/components/ui/button';
 import { 
   Card, 

@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { useData, Status, Priority } from '@/context/DataContext';
+import { useData, Status, Priority } from '@/context/data/DataContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
@@ -97,7 +97,10 @@ const Dashboard = () => {
               <strong>Prioridade:</strong> 
               <span className={`inline-block w-3 h-3 rounded-full ${
                 request.priority === 'Média' ? 'bg-blue-500' : 
-                request.priority === 'Alta' ? 'bg-yellow-500' : 'bg-red-500'
+                request.priority === 'Alta' ? 'bg-yellow-500' : 
+                request.priority === 'Baixa' ? 'bg-green-500' :
+                request.priority === 'Moderada' ? 'bg-orange-500' :
+                'bg-red-500'
               } mr-1`}></span> {request.priority}
             </p>
           </div>
@@ -184,7 +187,10 @@ const Dashboard = () => {
                     <td className="px-4 py-3">
                       <span className={`inline-block w-2 h-2 rounded-full ${
                         request.priority === 'Média' ? 'bg-blue-500' : 
-                        request.priority === 'Alta' ? 'bg-yellow-500' : 'bg-red-500'
+                        request.priority === 'Alta' ? 'bg-yellow-500' : 
+                        request.priority === 'Baixa' ? 'bg-green-500' :
+                        request.priority === 'Moderada' ? 'bg-orange-500' :
+                        'bg-red-500'
                       } mr-1`}></span>
                       {request.priority}
                     </td>
@@ -304,7 +310,7 @@ const Dashboard = () => {
           <CardContent className="pb-4">
             <div className="text-3xl font-bold">
               {filteredRequests.filter(r => 
-                ['Em cotação', 'Aguardando pagamento', 'Pagamento realizado', 'Aguardando entrega'].includes(r.status as string)
+                ['Em cotação', 'Aguardando pagamento', 'Pagamento realizado', 'Aguardando entrega'].includes(r.status)
               ).length}
             </div>
           </CardContent>
