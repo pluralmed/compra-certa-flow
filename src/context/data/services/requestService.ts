@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Request, RequestItem, Status } from '../types';
+import { Request, RequestItem, Status, RequestType, Priority } from '../types';
 
 export const useRequestService = () => {
   const [requests, setRequests] = useState<Request[]>([]);
@@ -32,13 +32,13 @@ export const useRequestService = () => {
           id: request.id.toString(),
           clientId: request.cliente_id.toString(),
           unitId: request.unidade_id.toString(),
-          type: request.tipo_solicitacao,
+          type: request.tipo_solicitacao as RequestType,
           justification: request.justificativa,
           budgetId: request.rubrica_id.toString(),
-          priority: request.prioridade,
+          priority: request.prioridade as Priority,
           userId: request.usuario_id.toString(),
           createdAt: request.data_criacao,
-          status: request.status,
+          status: request.status as Status,
           items: requestItems
         };
       }));
@@ -86,13 +86,13 @@ export const useRequestService = () => {
         id: requestData.id.toString(),
         clientId: requestData.cliente_id.toString(),
         unitId: requestData.unidade_id.toString(),
-        type: requestData.tipo_solicitacao,
+        type: requestData.tipo_solicitacao as RequestType,
         justification: requestData.justificativa,
         budgetId: requestData.rubrica_id.toString(),
-        priority: requestData.prioridade,
+        priority: requestData.prioridade as Priority,
         userId: requestData.usuario_id.toString(),
         createdAt: requestData.data_criacao,
-        status: requestData.status,
+        status: requestData.status as Status,
         items: itemsData.map(item => ({
           id: item.id.toString(),
           itemId: item.item_id.toString(),
@@ -208,6 +208,11 @@ export const useRequestService = () => {
       });
     }
   };
+  
+  // Get request by ID
+  const getRequestById = (id: string) => {
+    return requests.find(request => request.id === id);
+  };
 
   return {
     requests,
@@ -216,6 +221,7 @@ export const useRequestService = () => {
     createRequest,
     updateRequest,
     deleteRequest,
-    updateRequestStatus
+    updateRequestStatus,
+    getRequestById
   };
 };

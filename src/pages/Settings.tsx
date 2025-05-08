@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { useData } from '@/context/DataContext';
+import { useData } from '@/context/data/DataContext'; // Updated import path
 import { Button } from '@/components/ui/button';
 import {
   Card,

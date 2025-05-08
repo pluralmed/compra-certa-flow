@@ -134,6 +134,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       updateRequest: requestService.updateRequest,
       deleteRequest: requestService.deleteRequest,
       updateRequestStatus: requestService.updateRequestStatus,
+      getRequestById: requestService.getRequestById,
       
       // Loading states
       loading,

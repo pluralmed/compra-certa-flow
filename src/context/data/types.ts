@@ -125,6 +125,7 @@ export interface DataContextProps {
   updateRequest: (request: Request) => void;
   deleteRequest: (id: string) => void;
   updateRequestStatus: (id: string, status: Status) => void;
+  getRequestById: (id: string) => Request | undefined;
   
   // Loading states
   loading: boolean;
