@@ -310,7 +310,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           nome: client.name,
           municipio: client.municipality
         })
-        .eq('id', client.id);
+        .eq('id', parseInt(client.id));
       
       if (error) throw error;
       
@@ -337,7 +337,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       const { error } = await supabase
         .from('compras_clientes')
         .delete()
-        .eq('id', id);
+        .eq('id', parseInt(id));
       
       if (error) throw error;
       
@@ -405,7 +405,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           nome: unit.name,
           cliente_id: parseInt(unit.clientId)
         })
-        .eq('id', unit.id);
+        .eq('id', parseInt(unit.id));
       
       if (error) throw error;
       
@@ -432,7 +432,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       const { error } = await supabase
         .from('compras_unidades')
         .delete()
-        .eq('id', id);
+        .eq('id', parseInt(id));
       
       if (error) throw error;
       
@@ -503,7 +503,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           cliente_id: parseInt(budget.clientId),
           valor_mensal: budget.monthlyAmount
         })
-        .eq('id', budget.id);
+        .eq('id', parseInt(budget.id));
       
       if (error) throw error;
       
@@ -530,7 +530,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       const { error } = await supabase
         .from('compras_rubricas')
         .delete()
-        .eq('id', id);
+        .eq('id', parseInt(id));
       
       if (error) throw error;
       
@@ -640,7 +640,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           unidade_medida_id: unitOfMeasureData.id,
           valor_medio: item.averagePrice
         })
-        .eq('id', item.id);
+        .eq('id', parseInt(item.id));
       
       if (error) throw error;
       
@@ -667,7 +667,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       const { error } = await supabase
         .from('compras_itens')
         .delete()
-        .eq('id', id);
+        .eq('id', parseInt(id));
       
       if (error) throw error;
       
@@ -782,7 +782,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           prioridade: request.priority,
           status: request.status
         })
-        .eq('id', request.id);
+        .eq('id', parseInt(request.id));
       
       if (requestError) throw requestError;
       
@@ -790,7 +790,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       const { error: deleteItemsError } = await supabase
         .from('compras_itens_solicitacao')
         .delete()
-        .eq('solicitacao_id', request.id);
+        .eq('solicitacao_id', parseInt(request.id));
       
       if (deleteItemsError) throw deleteItemsError;
       
@@ -828,7 +828,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       const { error } = await supabase
         .from('compras_solicitacoes')
         .update({ status })
-        .eq('id', id);
+        .eq('id', parseInt(id));
       
       if (error) throw error;
       

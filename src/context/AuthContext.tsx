@@ -198,7 +198,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setor: updatedUser.sector,
           tipo_permissao: updatedUser.role,
         })
-        .eq('id', updatedUser.id);
+        .eq('id', parseInt(updatedUser.id));
 
       if (error) throw error;
 
@@ -225,7 +225,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { error } = await supabase
         .from('compras_usuarios')
         .delete()
-        .eq('id', id);
+        .eq('id', parseInt(id));
 
       if (error) throw error;
 

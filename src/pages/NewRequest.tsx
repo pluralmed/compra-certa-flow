@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -162,7 +161,7 @@ const NewRequest = () => {
   };
   
   // Submit request
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (requestItems.length === 0) {
@@ -170,19 +169,23 @@ const NewRequest = () => {
       return;
     }
     
-    const newRequestId = createRequest({
-      clientId,
-      unitId,
-      type: requestType,
-      justification,
-      budgetId,
-      priority,
-      userId: user!.id,
-      items: requestItems,
-    });
-    
-    setNewRequestId(newRequestId);
-    setIsSuccessOpen(true);
+    try {
+      const requestId = await createRequest({
+        clientId,
+        unitId,
+        type: requestType,
+        justification,
+        budgetId,
+        priority,
+        userId: user!.id,
+        items: requestItems,
+      });
+      
+      setNewRequestId(requestId);
+      setIsSuccessOpen(true);
+    } catch (error) {
+      console.error("Error creating request:", error);
+    }
   };
   
   // Reset form
