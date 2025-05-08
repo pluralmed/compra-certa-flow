@@ -280,7 +280,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       
       if (data) {
         const newClient: Client = {
-          id: data.id.toString(),
+          id: data.id.toString(), // Convert ID to string
           name: data.nome,
           municipality: data.municipio
         };
@@ -375,9 +375,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       
       if (data) {
         const newUnit: Unit = {
-          id: data.id.toString(),
+          id: data.id.toString(), // Convert ID to string
           name: data.nome,
-          clientId: data.cliente_id.toString()
+          clientId: data.cliente_id.toString() // Convert cliente_id to string
         };
         
         setUnits([...units, newUnit]);
@@ -471,9 +471,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       
       if (data) {
         const newBudget: Budget = {
-          id: data.id.toString(),
+          id: data.id.toString(), // Convert ID to string
           name: data.nome,
-          clientId: data.cliente_id.toString(),
+          clientId: data.cliente_id.toString(), // Convert cliente_id to string
           monthlyAmount: parseFloat(data.valor_mensal)
         };
         
@@ -588,7 +588,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       
       if (data) {
         const newItem: Item = {
-          id: data.id.toString(),
+          id: data.id.toString(), // Convert ID to string
           name: data.nome,
           group: item.group,
           unitOfMeasure: item.unitOfMeasure,
@@ -732,19 +732,19 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       
       // Create the transformed request for state update
       const newRequest: Request = {
-        id: requestData.id.toString(),
-        clientId: requestData.cliente_id.toString(),
-        unitId: requestData.unidade_id.toString(),
+        id: requestData.id.toString(), // Convert ID to string
+        clientId: requestData.cliente_id.toString(), // Convert cliente_id to string
+        unitId: requestData.unidade_id.toString(), // Convert unidade_id to string
         type: requestData.tipo_solicitacao as RequestType,
         justification: requestData.justificativa,
-        budgetId: requestData.rubrica_id.toString(),
+        budgetId: requestData.rubrica_id.toString(), // Convert rubrica_id to string
         priority: requestData.prioridade as Priority,
-        userId: requestData.usuario_id.toString(),
+        userId: requestData.usuario_id.toString(), // Convert usuario_id to string
         createdAt: requestData.data_criacao,
         status: requestData.status as Status,
         items: insertedItems.map(item => ({
-          id: item.id.toString(),
-          itemId: item.item_id.toString(),
+          id: item.id.toString(), // Convert ID to string
+          itemId: item.item_id.toString(), // Convert item_id to string
           quantity: parseFloat(item.quantidade)
         }))
       };
@@ -756,7 +756,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         description: "Entraremos em contato em breve.",
       });
       
-      return requestData.id.toString();
+      return requestData.id.toString(); // Convert ID to string for return value
     } catch (error) {
       console.error("Error creating request:", error);
       toast({
