@@ -1,18 +1,17 @@
-// Este arquivo agora exporta todos os componentes do sidebar/ de forma modular
-// Isso mantém a compatibilidade com os imports existentes, mas com uma estrutura de código mais limpa
+// Context and Provider
+export { useSidebar } from "./context";
+export { SidebarProvider } from "./provider";
 
+// Base components
 export {
-  // Context and Provider
-  useSidebar,
-  SidebarProvider,
-
-  // Base components
   Sidebar,
   SidebarTrigger,
   SidebarRail,
   SidebarInset,
+} from "./components/base";
 
-  // Content components
+// Content components
+export {
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
@@ -22,8 +21,10 @@ export {
   SidebarHeader,
   SidebarInput,
   SidebarSeparator,
+} from "./components/content";
 
-  // Menu components
+// Menu components
+export {
   SidebarMenu,
   SidebarMenuAction,
   SidebarMenuBadge,
@@ -33,4 +34,4 @@ export {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
-} from "./sidebar/index";
+} from "./components/menu"; 

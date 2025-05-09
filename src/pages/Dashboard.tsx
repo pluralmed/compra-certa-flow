@@ -62,6 +62,7 @@ const Dashboard = () => {
   const [view, setView] = useState<'kanban' | 'list'>('list');
   
   // Filtros
+  const [idFilter, setIdFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
   const [userFilter, setUserFilter] = useState<string>('all');
@@ -83,14 +84,24 @@ const Dashboard = () => {
   // Resetar a paginação quando os filtros mudam
   useEffect(() => {
     setCurrentPage(1);
-  }, [statusFilter, priorityFilter, userFilter, dateRange]);
+  }, [statusFilter, priorityFilter, userFilter, dateRange, idFilter]);
   
   // Limpar filtros
   const clearFilters = () => {
+    setIdFilter('');
     setStatusFilter('all');
     setPriorityFilter('all');
     setUserFilter('all');
     setDateRange(undefined);
+  };
+  
+  // Função para aceitar apenas números no filtro de ID
+  const handleIdFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // Permite apenas dígitos (números)
+    if (!value || /^\d*$/.test(value)) {
+      setIdFilter(value);
+    }
   };
   
   // Filter requests by user role and filters
@@ -99,6 +110,11 @@ const Dashboard = () => {
     let filtered = user.role === 'admin' 
       ? requests 
       : requests.filter(req => req.userId === user.id);
+    
+    // Filtrar por ID (apenas para admin)
+    if (user.role === 'admin' && idFilter.trim() !== '') {
+      filtered = filtered.filter(req => req.id.includes(idFilter.trim()));
+    }
     
     // Filtrar por status
     if (statusFilter !== 'all') {
@@ -133,7 +149,7 @@ const Dashboard = () => {
     }
     
     return filtered;
-  }, [requests, user, statusFilter, priorityFilter, userFilter, dateRange]);
+  }, [requests, user, idFilter, statusFilter, priorityFilter, userFilter, dateRange]);
   
   // Componente simples para o cartão
   const RequestCard = ({ request }: { request: any }) => {
@@ -268,43 +284,6 @@ const Dashboard = () => {
     );
   };
   
-  // Filtro de Data
-  const CalendarComponent = () => (
-    <div className="space-y-2">
-      <Label>Período</Label>
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            className="w-full justify-start text-left font-normal"
-          >
-            <CalendarIcon className="mr-2 h-4 w-4" />
-            {dateRange?.from ? (
-              dateRange.to ? (
-                <>
-                  {format(dateRange.from, 'dd/MM/yyyy')} - {format(dateRange.to, 'dd/MM/yyyy')}
-                </>
-              ) : (
-                format(dateRange.from, 'dd/MM/yyyy')
-              )
-            ) : (
-              "Selecione o período"
-            )}
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="start">
-          <Calendar
-            mode="range"
-            selected={dateRange}
-            onSelect={setDateRange}
-            locale={ptBR}
-            initialFocus
-          />
-        </PopoverContent>
-      </Popover>
-    </div>
-  );
-  
   // List view for all users
   const ListView = () => {
     // Calcular o número total de páginas
@@ -358,12 +337,28 @@ const Dashboard = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="flex items-center justify-between gap-3">
+              {/* Filtro de ID (apenas para admin) */}
+              {user.role === 'admin' && (
+                <div className="flex-1 min-w-[120px]">
+                  <Label htmlFor="request-id" className="mb-2 block">ID da Solicitação</Label>
+                  <Input
+                    id="request-id"
+                    placeholder="Buscar por ID"
+                    value={idFilter}
+                    onChange={handleIdFilterChange}
+                    inputMode="numeric"
+                    className="w-full"
+                    autoComplete="off"
+                  />
+                </div>
+              )}
+              
               {/* Filtro de Status */}
-              <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
+              <div className="flex-1 min-w-[120px]">
+                <Label htmlFor="status" className="mb-2 block">Status</Label>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger id="status">
+                  <SelectTrigger id="status" className="w-full">
                     <SelectValue placeholder="Filtrar por status" />
                   </SelectTrigger>
                   <SelectContent>
@@ -378,10 +373,10 @@ const Dashboard = () => {
               </div>
               
               {/* Filtro de Prioridade */}
-              <div className="space-y-2">
-                <Label htmlFor="priority">Prioridade</Label>
+              <div className="flex-1 min-w-[120px]">
+                <Label htmlFor="priority" className="mb-2 block">Prioridade</Label>
                 <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-                  <SelectTrigger id="priority">
+                  <SelectTrigger id="priority" className="w-full">
                     <SelectValue placeholder="Filtrar por prioridade" />
                   </SelectTrigger>
                   <SelectContent>
@@ -397,10 +392,10 @@ const Dashboard = () => {
               
               {/* Filtro de Solicitante (apenas para admin) */}
               {user.role === 'admin' && (
-                <div className="space-y-2">
-                  <Label htmlFor="user">Solicitante</Label>
+                <div className="flex-1 min-w-[120px]">
+                  <Label htmlFor="user" className="mb-2 block">Solicitante</Label>
                   <Select value={userFilter} onValueChange={setUserFilter}>
-                    <SelectTrigger id="user">
+                    <SelectTrigger id="user" className="w-full">
                       <SelectValue placeholder="Filtrar por solicitante" />
                     </SelectTrigger>
                     <SelectContent>
@@ -416,7 +411,39 @@ const Dashboard = () => {
               )}
               
               {/* Filtro de Data */}
-              <CalendarComponent />
+              <div className="flex-1 min-w-[150px]">
+                <Label className="mb-2 block">Período</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start text-left font-normal"
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {dateRange?.from ? (
+                        dateRange.to ? (
+                          <>
+                            {format(dateRange.from, 'dd/MM/yyyy')} - {format(dateRange.to, 'dd/MM/yyyy')}
+                          </>
+                        ) : (
+                          format(dateRange.from, 'dd/MM/yyyy')
+                        )
+                      ) : (
+                        "Selecione o período"
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="range"
+                      selected={dateRange}
+                      onSelect={setDateRange}
+                      locale={ptBR}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
             </div>
           </CardContent>
         </Card>
