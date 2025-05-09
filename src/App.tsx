@@ -13,6 +13,7 @@ import Settings from "./pages/Settings";
 import NewRequest from "./pages/NewRequest";
 import RequestDetails from "./pages/RequestDetails";
 import NotFound from "./pages/NotFound";
+import { LoadingScreen } from "./components/ui/loading-screen";
 
 const queryClient = new QueryClient();
 
@@ -20,9 +21,9 @@ const queryClient = new QueryClient();
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   
-  // Se ainda estiver carregando, não fazer nada
+  // Se ainda estiver carregando, mostrar tela de loading
   if (loading) {
-    return <div className="flex items-center justify-center h-screen">Carregando...</div>;
+    return <LoadingScreen />;
   }
   
   // Se não tiver usuário, redirecionar para login
@@ -38,9 +39,9 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 const RedirectIfLoggedIn = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   
-  // Se ainda estiver carregando, não fazer nada
+  // Se ainda estiver carregando, mostrar tela de loading
   if (loading) {
-    return <div className="flex items-center justify-center h-screen">Carregando...</div>;
+    return <LoadingScreen />;
   }
   
   // Se já estiver logado, redirecionar para dashboard

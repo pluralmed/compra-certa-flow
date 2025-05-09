@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useData } from '@/context/data/DataContext'; // Updated import path
@@ -349,11 +348,31 @@ const Settings = () => {
       
       {/* Tabs for different settings */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="clients">Clientes</TabsTrigger>
-          <TabsTrigger value="units">Unidades</TabsTrigger>
-          <TabsTrigger value="budgets">Rubricas</TabsTrigger>
-          <TabsTrigger value="items">Itens</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-4 bg-white border rounded-md p-1 mb-4 shadow-sm">
+          <TabsTrigger 
+            value="clients" 
+            className="text-gray-700 hover:bg-gray-100 data-[state=active]:bg-teal data-[state=active]:text-white font-medium"
+          >
+            Clientes
+          </TabsTrigger>
+          <TabsTrigger 
+            value="units" 
+            className="text-gray-700 hover:bg-gray-100 data-[state=active]:bg-teal data-[state=active]:text-white font-medium"
+          >
+            Unidades
+          </TabsTrigger>
+          <TabsTrigger 
+            value="budgets" 
+            className="text-gray-700 hover:bg-gray-100 data-[state=active]:bg-teal data-[state=active]:text-white font-medium"
+          >
+            Rubricas
+          </TabsTrigger>
+          <TabsTrigger 
+            value="items" 
+            className="text-gray-700 hover:bg-gray-100 data-[state=active]:bg-teal data-[state=active]:text-white font-medium"
+          >
+            Itens
+          </TabsTrigger>
         </TabsList>
         
         {/* Clients Tab */}

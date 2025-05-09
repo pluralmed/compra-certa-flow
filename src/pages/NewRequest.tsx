@@ -23,15 +23,18 @@ import {
 } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import { Button } from "@/components/ui/button"
-import { Plus, X } from 'lucide-react';
+import { Plus, X, Search, ShoppingCart } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Badge } from "@/components/ui/badge"
 
 const NewRequest = () => {
   const { clients, units, budgets, items: availableItems, createRequest } = useData();
@@ -46,39 +49,77 @@ const NewRequest = () => {
   const [justification, setJustification] = useState('');
   const [priority, setPriority] = useState<Priority>('Moderado');
   const [items, setItems] = useState<({ id: string; name: string; quantity: number })[]>([]);
-  const [newItemName, setNewItemName] = useState('');
-  const [newItemQuantity, setNewItemQuantity] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [confirmationId, setConfirmationId] = useState<string | null>(null);
+  
+  // Estado para o modal de itens
+  const [isItemModalOpen, setIsItemModalOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedItems, setSelectedItems] = useState<{id: string; name: string; quantity: number}[]>([]);
+  const [tempItems, setTempItems] = useState<{id: string; name: string; quantity: number}[]>([]);
   
   useEffect(() => {
     if (showConfirmation && confirmationId) {
       const timer = setTimeout(() => {
         setShowConfirmation(false);
-        navigate(`/solicitacao/${confirmationId}`);
-      }, 3000);
+      }, 5000); // Mantém o popup visível por 5 segundos
       
       return () => clearTimeout(timer);
     }
-  }, [showConfirmation, confirmationId, navigate]);
+  }, [showConfirmation, confirmationId]);
   
-  const handleAddItem = () => {
-    if (newItemName && newItemQuantity > 0) {
-      const selectedItem = availableItems.find(item => item.name === newItemName);
-      if (selectedItem) {
-        setItems([...items, { id: selectedItem.id, name: selectedItem.name, quantity: newItemQuantity }]);
-        setNewItemName('');
-        setNewItemQuantity(1);
-      }
+  useEffect(() => {
+    // Inicializa tempItems com os itens já selecionados quando o modal é aberto
+    if (isItemModalOpen) {
+      setTempItems([...items]);
     }
-  };
+  }, [isItemModalOpen, items]);
   
   const handleRemoveItem = (index: number) => {
     const newItems = [...items];
     newItems.splice(index, 1);
     setItems(newItems);
   };
+  
+  const handleUpdateQuantity = (id: string, quantity: number) => {
+    if (quantity <= 0) return;
+    
+    setTempItems(prevItems => 
+      prevItems.map(item => 
+        item.id === id ? { ...item, quantity } : item
+      )
+    );
+  };
+  
+  const handleAddTempItem = (item: Item) => {
+    const existingItem = tempItems.find(i => i.id === item.id);
+    
+    if (existingItem) {
+      // Se o item já existe, apenas atualize a quantidade
+      setTempItems(prevItems => 
+        prevItems.map(i => 
+          i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i
+        )
+      );
+    } else {
+      // Se o item não existe, adicione-o
+      setTempItems([...tempItems, { id: item.id, name: item.name, quantity: 1 }]);
+    }
+  };
+  
+  const handleRemoveTempItem = (id: string) => {
+    setTempItems(tempItems.filter(item => item.id !== id));
+  };
+  
+  const confirmItemSelection = () => {
+    setItems(tempItems);
+    setIsItemModalOpen(false);
+  };
+  
+  const filteredItems = availableItems.filter(item => 
+    item.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -149,6 +190,30 @@ const NewRequest = () => {
       });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+  
+  // Função para resetar o formulário
+  const resetForm = () => {
+    setClient(null);
+    setUnit(null);
+    setBudget(null);
+    setType('Compra direta');
+    setJustification('');
+    setPriority('Moderado');
+    setItems([]);
+    setIsSubmitting(false);
+    setConfirmationId(null);
+  };
+  
+  // Manipular o fechamento do modal
+  const handleCloseConfirmation = (open: boolean) => {
+    setShowConfirmation(open);
+    
+    // Se o modal foi fechado (open === false) e temos um ID de confirmação
+    if (!open && confirmationId) {
+      resetForm();
+      navigate('/'); // Redirecionando para a rota principal (Dashboard)
     }
   };
   
@@ -243,61 +308,38 @@ const NewRequest = () => {
               </SelectContent>
             </Select>
           </div>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle>Itens da Solicitação</CardTitle>
-          <CardDescription>
-            Adicione os itens que você deseja solicitar.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center space-x-2">
-            <Input
-              type="text"
-              placeholder="Nome do item"
-              value={newItemName}
-              onChange={(e) => setNewItemName(e.target.value)}
-              list="itemsList"
-            />
-            <datalist id="itemsList">
-              {availableItems.map((item) => (
-                <option key={item.id} value={item.name} />
-              ))}
-            </datalist>
-            
-            <Input
-              type="number"
-              placeholder="Quantidade"
-              value={newItemQuantity}
-              onChange={(e) => setNewItemQuantity(parseInt(e.target.value))}
-              className="w-24"
-            />
-            
-            <Button type="button" onClick={handleAddItem}>
-              <Plus className="mr-2 h-4 w-4" />
-              Adicionar
+          
+          {/* Itens selecionados */}
+          {items.length > 0 && (
+            <div className="mt-4">
+              <Label>Itens Selecionados</Label>
+              <div className="mt-2 border border-teal-300 rounded-md p-3 bg-teal-50">
+                <ul className="space-y-2">
+                  {items.map((item, index) => (
+                    <li key={index} className="flex items-center justify-between p-2 bg-white border border-teal-200 rounded-md">
+                      <span>{item.name} - Quantidade: {item.quantity}</span>
+                      <Button type="button" variant="ghost" size="icon" onClick={() => handleRemoveItem(index)}>
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
+          
+          {/* Botão de adicionar itens */}
+          <div className="pt-2">
+            <Button 
+              type="button" 
+              variant={items.length > 0 ? "outline" : "default"}
+              className={`w-full ${items.length === 0 ? "bg-teal hover:bg-teal/90" : "border-teal text-teal hover:bg-teal/10"}`}
+              onClick={() => setIsItemModalOpen(true)}
+            >
+              <ShoppingCart className="mr-2 h-4 w-4" />
+              {items.length > 0 ? 'Gerenciar Itens' : 'Adicionar Itens'}
             </Button>
           </div>
-          
-          <Separator />
-          
-          {items.length === 0 ? (
-            <p className="text-muted-foreground">Nenhum item adicionado.</p>
-          ) : (
-            <ul className="space-y-2">
-              {items.map((item, index) => (
-                <li key={index} className="flex items-center justify-between">
-                  <span>{item.name} - Quantidade: {item.quantity}</span>
-                  <Button type="button" variant="ghost" size="icon" onClick={() => handleRemoveItem(index)}>
-                    <X className="h-4 w-4" />
-                  </Button>
-                </li>
-              ))}
-            </ul>
-          )}
         </CardContent>
       </Card>
       
@@ -305,14 +347,131 @@ const NewRequest = () => {
         {isSubmitting ? "Enviando..." : "Enviar Solicitação"}
       </Button>
       
-      <Dialog open={showConfirmation} onOpenChange={setShowConfirmation}>
+      {/* Modal de confirmação */}
+      <Dialog open={showConfirmation} onOpenChange={handleCloseConfirmation}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Solicitação enviada!</DialogTitle>
             <DialogDescription>
-              Sua solicitação foi enviada com sucesso. Você será redirecionado em breve.
+              Sua solicitação foi enviada com sucesso. Você será contactado em breve.
             </DialogDescription>
           </DialogHeader>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Modal de seleção de itens */}
+      <Dialog open={isItemModalOpen} onOpenChange={setIsItemModalOpen}>
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle>Adicionar Itens</DialogTitle>
+            <DialogDescription>
+              Busque e selecione os itens para sua solicitação
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {/* Barra de busca */}
+            <div className="flex items-center relative">
+              <Search className="absolute left-2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar item..."
+                className="pl-8"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            
+            {/* Lista de itens disponíveis */}
+            <div className="grid grid-cols-1 gap-2">
+              <h4 className="text-sm font-medium">Itens Disponíveis</h4>
+              <ScrollArea className="h-[200px] rounded-md border border-gray-300 shadow-sm bg-white p-2">
+                {filteredItems.length === 0 ? (
+                  <p className="text-center py-4 text-muted-foreground">Nenhum item encontrado</p>
+                ) : (
+                  <div className="space-y-2">
+                    {filteredItems.map((item) => (
+                      <div 
+                        key={item.id} 
+                        className="flex items-center justify-between p-2 hover:bg-gray-100 rounded-md border border-gray-200"
+                      >
+                        <span>{item.name}</span>
+                        <Button 
+                          type="button" 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => handleAddTempItem(item)}
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </ScrollArea>
+            </div>
+            
+            {/* Itens selecionados temporariamente */}
+            <div className="grid grid-cols-1 gap-2">
+              <h4 className="text-sm font-medium">Itens Selecionados</h4>
+              {tempItems.length === 0 ? (
+                <p className="text-center py-4 text-muted-foreground border rounded-md">Nenhum item selecionado</p>
+              ) : (
+                <ScrollArea className="h-[200px] rounded-md border border-teal-300 shadow-sm bg-teal-50 p-2">
+                  <div className="space-y-2">
+                    {tempItems.map((item) => (
+                      <div 
+                        key={item.id} 
+                        className="flex items-center justify-between p-2 bg-white border border-teal-200 hover:bg-teal-50 rounded-md"
+                      >
+                        <span>{item.name}</span>
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center border rounded-md bg-white">
+                            <Button 
+                              type="button" 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 p-0"
+                              onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
+                              disabled={item.quantity <= 1}
+                            >
+                              <span>-</span>
+                            </Button>
+                            <span className="w-8 text-center">{item.quantity}</span>
+                            <Button 
+                              type="button" 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 p-0"
+                              onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
+                            >
+                              <span>+</span>
+                            </Button>
+                          </div>
+                          <Button 
+                            type="button" 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => handleRemoveTempItem(item.id)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              )}
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setIsItemModalOpen(false)}>
+              Cancelar
+            </Button>
+            <Button type="button" onClick={confirmItemSelection}>
+              Confirmar
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </form>

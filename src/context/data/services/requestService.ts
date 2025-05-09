@@ -181,11 +181,6 @@ export const useRequestService = () => {
       
       setRequests(prevRequests => [...prevRequests, newRequest]);
       
-      toast({
-        title: "Solicitação criada",
-        description: "Sua solicitação foi criada com sucesso.",
-      });
-      
       return requestData.id.toString();
     } catch (error) {
       console.error("Error creating request:", error);

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { 
@@ -28,7 +27,7 @@ import {
   TableHeader, 
   TableRow 
 } from '@/components/ui/table';
-import { Plus, Edit, Trash2 } from 'lucide-react';
+import { Plus, Edit, Trash2, Search } from 'lucide-react';
 import { formatPhoneNumber } from '@/utils/format';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -59,6 +58,9 @@ const UserManagement = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
+  
+  // Adicionar estado para o termo de pesquisa
+  const [searchTerm, setSearchTerm] = useState('');
   
   // Form states
   const [name, setName] = useState('');
@@ -142,6 +144,12 @@ const UserManagement = () => {
   const handleWhatsappChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setWhatsapp(formatPhoneNumber(e.target.value));
   };
+  
+  // Filtrar usuários com base no termo de pesquisa
+  const filteredUsers = users.filter(user => 
+    `${user.name} ${user.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
   
   return (
     <div className="space-y-6">
@@ -259,6 +267,20 @@ const UserManagement = () => {
         </Dialog>
       </div>
       
+      {/* Filtro de pesquisa */}
+      <div className="relative">
+        <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+          <Search className="h-5 w-5 text-gray-400" />
+        </div>
+        <Input
+          type="text"
+          placeholder="Buscar usuários por nome ou email..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-10 bg-white"
+        />
+      </div>
+      
       {/* Table of users */}
       <div className="bg-white rounded-lg shadow">
         <div className="overflow-x-auto">
@@ -274,7 +296,7 @@ const UserManagement = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users.map((user) => (
+              {filteredUsers.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell className="font-medium">{user.name} {user.lastName}</TableCell>
                   <TableCell>{user.email}</TableCell>
@@ -308,10 +330,10 @@ const UserManagement = () => {
                   </TableCell>
                 </TableRow>
               ))}
-              {users.length === 0 && (
+              {filteredUsers.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
-                    Nenhum usuário encontrado.
+                    {searchTerm ? "Nenhum usuário encontrado com este termo de busca." : "Nenhum usuário encontrado."}
                   </TableCell>
                 </TableRow>
               )}

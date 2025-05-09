@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useData } from '@/context/data/DataContext';
@@ -59,13 +59,17 @@ const Dashboard = () => {
   const { user, users } = useAuth();
   const { requests, clients, units, updateRequestStatus } = useData();
   const navigate = useNavigate();
-  const [view, setView] = useState<'kanban' | 'list'>(user.role === 'admin' ? 'kanban' : 'list');
+  const [view, setView] = useState<'kanban' | 'list'>('list');
   
   // Filtros
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
   const [userFilter, setUserFilter] = useState<string>('all');
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+  
+  // Paginação
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   
   // Obter usuários que realizaram solicitações
   const usersWithRequests = useMemo(() => {
@@ -75,6 +79,11 @@ const Dashboard = () => {
     // Filtrar a lista de usuários para incluir apenas aqueles que fizeram solicitações
     return users.filter(user => userIds.includes(user.id));
   }, [requests, users]);
+  
+  // Resetar a paginação quando os filtros mudam
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter, priorityFilter, userFilter, dateRange]);
   
   // Limpar filtros
   const clearFilters = () => {
@@ -297,158 +306,247 @@ const Dashboard = () => {
   );
   
   // List view for all users
-  const ListView = () => (
-    <div className="space-y-4">
-      {/* Filtros */}
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Filter size={16} />
-                Filtros
-              </CardTitle>
-              <CardDescription>
-                Use os filtros para encontrar solicitações específicas
-              </CardDescription>
+  const ListView = () => {
+    // Calcular o número total de páginas
+    const totalPages = Math.ceil(filteredRequests.length / itemsPerPage);
+    
+    // Obter os itens da página atual
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentItems = filteredRequests.slice(indexOfFirstItem, indexOfLastItem);
+    
+    // Função para mudar de página
+    const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
+    
+    // Funções para avançar e retroceder página
+    const nextPage = () => {
+      if (currentPage < totalPages) {
+        setCurrentPage(currentPage + 1);
+      }
+    };
+    
+    const prevPage = () => {
+      if (currentPage > 1) {
+        setCurrentPage(currentPage - 1);
+      }
+    };
+    
+    return (
+      <div className="space-y-4">
+        {/* Filtros */}
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Filter size={16} />
+                  Filtros
+                </CardTitle>
+                <CardDescription>
+                  Use os filtros para encontrar solicitações específicas
+                </CardDescription>
+              </div>
+              <div className="flex">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={clearFilters}
+                >
+                  <X size={14} className="mr-1" /> Limpar Filtros
+                </Button>
+              </div>
             </div>
-            <div className="flex">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={clearFilters}
-              >
-                <X size={14} className="mr-1" /> Limpar Filtros
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Filtro de Status */}
-            <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger id="status">
-                  <SelectValue placeholder="Filtrar por status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os Status</SelectItem>
-                  {statusList.map(status => (
-                    <SelectItem key={status} value={status}>
-                      {getStatusEmoji(status)} {status}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            {/* Filtro de Prioridade */}
-            <div className="space-y-2">
-              <Label htmlFor="priority">Prioridade</Label>
-              <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-                <SelectTrigger id="priority">
-                  <SelectValue placeholder="Filtrar por prioridade" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas as Prioridades</SelectItem>
-                  {priorityList.map(priority => (
-                    <SelectItem key={priority} value={priority}>
-                      {priority}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            {/* Filtro de Solicitante (apenas para admin) */}
-            {user.role === 'admin' && (
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Filtro de Status */}
               <div className="space-y-2">
-                <Label htmlFor="user">Solicitante</Label>
-                <Select value={userFilter} onValueChange={setUserFilter}>
-                  <SelectTrigger id="user">
-                    <SelectValue placeholder="Filtrar por solicitante" />
+                <Label htmlFor="status">Status</Label>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger id="status">
+                    <SelectValue placeholder="Filtrar por status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Todos os Solicitantes</SelectItem>
-                    {usersWithRequests.map(u => (
-                      <SelectItem key={u.id} value={u.id}>
-                        {u.name} {u.lastName}
+                    <SelectItem value="all">Todos os Status</SelectItem>
+                    {statusList.map(status => (
+                      <SelectItem key={status} value={status}>
+                        {getStatusEmoji(status)} {status}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-            )}
-            
-            {/* Filtro de Data */}
-            <CalendarComponent />
-          </div>
-        </CardContent>
-      </Card>
-      
-      {/* Tabela de Solicitações */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="text-xs font-medium text-gray-500 border-b">
-                <th className="px-4 py-3 text-left">ID</th>
-                <th className="px-4 py-3 text-left">Data</th>
-                <th className="px-4 py-3 text-left">Cliente</th>
-                <th className="px-4 py-3 text-left hidden md:table-cell">Tipo</th>
-                <th className="px-4 py-3 text-left hidden sm:table-cell">Prioridade</th>
-                <th className="px-4 py-3 text-left">Status</th>
-                <th className="px-4 py-3 text-right">Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredRequests.map(request => {
-                const client = clients.find(c => c.id === request.clientId);
-                return (
-                  <tr key={request.id} className="text-sm border-b last:border-0 hover:bg-gray-50">
-                    <td className="px-4 py-3">#{request.id}</td>
-                    <td className="px-4 py-3">{formatDate(request.createdAt)}</td>
-                    <td className="px-4 py-3">{client?.name}</td>
-                    <td className="px-4 py-3 hidden md:table-cell">{formatRequestType(request.type)}</td>
-                    <td className="px-4 py-3 hidden sm:table-cell">
-                      <span className={`inline-block w-2 h-2 rounded-full ${
-                        request.priority === 'Moderado' ? 'bg-blue-500' : 
-                        request.priority === 'Urgente' ? 'bg-orange-500' : 
-                        'bg-red-500'
-                      } mr-1`}></span>
-                      {request.priority}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="inline-flex items-center gap-1 text-xs">
-                        {getStatusEmoji(request.status)} {request.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => navigate(`/solicitacao/${request.id}`)}
-                      >
-                        Ver
-                      </Button>
+              
+              {/* Filtro de Prioridade */}
+              <div className="space-y-2">
+                <Label htmlFor="priority">Prioridade</Label>
+                <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+                  <SelectTrigger id="priority">
+                    <SelectValue placeholder="Filtrar por prioridade" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas as Prioridades</SelectItem>
+                    {priorityList.map(priority => (
+                      <SelectItem key={priority} value={priority}>
+                        {priority}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {/* Filtro de Solicitante (apenas para admin) */}
+              {user.role === 'admin' && (
+                <div className="space-y-2">
+                  <Label htmlFor="user">Solicitante</Label>
+                  <Select value={userFilter} onValueChange={setUserFilter}>
+                    <SelectTrigger id="user">
+                      <SelectValue placeholder="Filtrar por solicitante" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos os Solicitantes</SelectItem>
+                      {usersWithRequests.map(u => (
+                        <SelectItem key={u.id} value={u.id}>
+                          {u.name} {u.lastName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              
+              {/* Filtro de Data */}
+              <CalendarComponent />
+            </div>
+          </CardContent>
+        </Card>
+        
+        {/* Tabela de Solicitações */}
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="text-xs font-medium text-gray-500 border-b">
+                  <th className="px-4 py-3 text-left">ID</th>
+                  <th className="px-4 py-3 text-left">Data</th>
+                  <th className="px-4 py-3 text-left">Cliente</th>
+                  <th className="px-4 py-3 text-left hidden md:table-cell">Tipo</th>
+                  <th className="px-4 py-3 text-left hidden sm:table-cell">Prioridade</th>
+                  <th className="px-4 py-3 text-left">Status</th>
+                  <th className="px-4 py-3 text-right">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {currentItems.map(request => {
+                  const client = clients.find(c => c.id === request.clientId);
+                  return (
+                    <tr key={request.id} className="text-sm border-b last:border-0 hover:bg-gray-50">
+                      <td className="px-4 py-3">#{request.id}</td>
+                      <td className="px-4 py-3">{formatDate(request.createdAt)}</td>
+                      <td className="px-4 py-3">{client?.name}</td>
+                      <td className="px-4 py-3 hidden md:table-cell">{formatRequestType(request.type)}</td>
+                      <td className="px-4 py-3 hidden sm:table-cell">
+                        <span className={`inline-block w-2 h-2 rounded-full ${
+                          request.priority === 'Moderado' ? 'bg-blue-500' : 
+                          request.priority === 'Urgente' ? 'bg-orange-500' : 
+                          'bg-red-500'
+                        } mr-1`}></span>
+                        {request.priority}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="inline-flex items-center gap-1 text-xs">
+                          {getStatusEmoji(request.status)} {request.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => navigate(`/solicitacao/${request.id}`)}
+                        >
+                          Ver
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {filteredRequests.length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
+                      Nenhuma solicitação encontrada.
                     </td>
                   </tr>
-                );
-              })}
-              {filteredRequests.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
-                    Nenhuma solicitação encontrada.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                )}
+              </tbody>
+            </table>
+          </div>
+          
+          {/* Controles de Paginação */}
+          {filteredRequests.length > 0 && (
+            <div className="flex justify-between items-center px-4 py-3 border-t">
+              <div className="text-sm text-muted-foreground">
+                Mostrando <span className="font-medium">{indexOfFirstItem + 1}</span> a <span className="font-medium">
+                  {Math.min(indexOfLastItem, filteredRequests.length)}
+                </span> de <span className="font-medium">{filteredRequests.length}</span> resultados
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={prevPage} 
+                  disabled={currentPage === 1}
+                >
+                  Anterior
+                </Button>
+                
+                <div className="flex items-center">
+                  {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                    // Lógica para mostrar as páginas corretas quando há muitas páginas
+                    let pageNum = i + 1;
+                    
+                    if (totalPages > 5) {
+                      if (currentPage <= 3) {
+                        // Mostrar as primeiras 5 páginas
+                        pageNum = i + 1;
+                      } else if (currentPage >= totalPages - 2) {
+                        // Mostrar as últimas 5 páginas
+                        pageNum = totalPages - 4 + i;
+                      } else {
+                        // Mostrar 2 páginas antes e 2 depois da atual
+                        pageNum = currentPage - 2 + i;
+                      }
+                    }
+                    
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "default" : "outline"}
+                        size="sm"
+                        className="w-8 h-8 p-0 mx-1"
+                        onClick={() => paginate(pageNum)}
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                </div>
+                
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={nextPage} 
+                  disabled={currentPage === totalPages}
+                >
+                  Próxima
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
-    </div>
-  );
+    );
+  };
   
   return (
     <div className="space-y-6">

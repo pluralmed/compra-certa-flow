@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { Spinner } from '@/components/ui/spinner';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -90,7 +91,13 @@ const Login = () => {
               className="w-full bg-teal hover:bg-teal/90"
               disabled={isLoading}
             >
-              {isLoading ? "Entrando..." : "Entrar"}
+              {isLoading ? (
+                <span className="flex items-center justify-center">
+                  <Spinner size="sm" className="mr-2" /> Processando
+                </span>
+              ) : (
+                "Entrar"
+              )}
             </Button>
           </form>
         </div>
