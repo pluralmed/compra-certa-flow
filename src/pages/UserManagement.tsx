@@ -90,7 +90,8 @@ const UserManagement = () => {
     setStatus('ativo');
   };
   
-  const handleAddUser = () => {
+  const handleAddUser = (e: React.FormEvent) => {
+    e.preventDefault();
     addUser({
       name,
       lastName,
@@ -105,7 +106,8 @@ const UserManagement = () => {
     setIsAddDialogOpen(false);
   };
   
-  const handleUpdateUser = () => {
+  const handleUpdateUser = (e: React.FormEvent) => {
+    e.preventDefault();
     if (!selectedUser) return;
     
     updateUser({
@@ -181,107 +183,115 @@ const UserManagement = () => {
               </DialogDescription>
             </DialogHeader>
             
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
+            <form onSubmit={handleAddUser}>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Nome</Label>
+                    <Input 
+                      id="name" 
+                      value={name} 
+                      onChange={(e) => setName(e.target.value)} 
+                      placeholder="Nome"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName">Sobrenome</Label>
+                    <Input 
+                      id="lastName" 
+                      value={lastName} 
+                      onChange={(e) => setLastName(e.target.value)} 
+                      placeholder="Sobrenome"
+                      required
+                    />
+                  </div>
+                </div>
+                
                 <div className="space-y-2">
-                  <Label htmlFor="name">Nome</Label>
+                  <Label htmlFor="email">Email</Label>
                   <Input 
-                    id="name" 
-                    value={name} 
-                    onChange={(e) => setName(e.target.value)} 
-                    placeholder="Nome"
+                    id="email" 
+                    type="email" 
+                    value={email} 
+                    onChange={(e) => setEmail(e.target.value)} 
+                    placeholder="email@exemplo.com"
+                    required
                   />
                 </div>
+                
                 <div className="space-y-2">
-                  <Label htmlFor="lastName">Sobrenome</Label>
+                  <Label htmlFor="password">Senha</Label>
                   <Input 
-                    id="lastName" 
-                    value={lastName} 
-                    onChange={(e) => setLastName(e.target.value)} 
-                    placeholder="Sobrenome"
+                    id="password" 
+                    type="password" 
+                    value={password} 
+                    onChange={(e) => setPassword(e.target.value)} 
+                    placeholder="••••••••"
+                    required
+                    minLength={6}
                   />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="whatsapp">WhatsApp</Label>
+                  <Input 
+                    id="whatsapp" 
+                    value={whatsapp} 
+                    onChange={handleWhatsappChange} 
+                    placeholder="(99) 9 9999-9999"
+                    required
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="sector">Setor</Label>
+                  <Select value={sector} onValueChange={setSector} required>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o setor" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {sectors.map((s) => (
+                        <SelectItem key={s} value={s}>
+                          {s}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="role">Permissão</Label>
+                  <Select value={role} onValueChange={(value: 'admin' | 'normal') => setRole(value)} required>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o tipo de permissão" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="normal">Normal</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="status">Status</Label>
+                  <Select value={status} onValueChange={(value: 'ativo' | 'inativo') => setStatus(value)} required>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ativo">Ativo</SelectItem>
+                      <SelectItem value="inativo">Inativo</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input 
-                  id="email" 
-                  type="email" 
-                  value={email} 
-                  onChange={(e) => setEmail(e.target.value)} 
-                  placeholder="email@exemplo.com"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="password">Senha</Label>
-                <Input 
-                  id="password" 
-                  type="password" 
-                  value={password} 
-                  onChange={(e) => setPassword(e.target.value)} 
-                  placeholder="••••••••"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="whatsapp">WhatsApp</Label>
-                <Input 
-                  id="whatsapp" 
-                  value={whatsapp} 
-                  onChange={handleWhatsappChange} 
-                  placeholder="(99) 9 9999-9999"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="sector">Setor</Label>
-                <Select value={sector} onValueChange={setSector}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o setor" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {sectors.map((s) => (
-                      <SelectItem key={s} value={s}>
-                        {s}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="role">Permissão</Label>
-                <Select value={role} onValueChange={(value: 'admin' | 'normal') => setRole(value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o tipo de permissão" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="admin">Admin</SelectItem>
-                    <SelectItem value="normal">Normal</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
-                <Select value={status} onValueChange={(value: 'ativo' | 'inativo') => setStatus(value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ativo">Ativo</SelectItem>
-                    <SelectItem value="inativo">Inativo</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Cancelar</Button>
-              <Button className="bg-teal hover:bg-teal/90" onClick={handleAddUser}>Adicionar</Button>
-            </DialogFooter>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>Cancelar</Button>
+                <Button type="submit" className="bg-teal hover:bg-teal/90">Adicionar</Button>
+              </DialogFooter>
+            </form>
           </DialogContent>
         </Dialog>
       </div>
@@ -381,109 +391,115 @@ const UserManagement = () => {
             </DialogDescription>
           </DialogHeader>
           
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
+          <form onSubmit={handleUpdateUser}>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-name">Nome</Label>
+                  <Input 
+                    id="edit-name" 
+                    value={name} 
+                    onChange={(e) => setName(e.target.value)} 
+                    placeholder="Nome"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-lastName">Sobrenome</Label>
+                  <Input 
+                    id="edit-lastName" 
+                    value={lastName} 
+                    onChange={(e) => setLastName(e.target.value)} 
+                    placeholder="Sobrenome"
+                    required
+                  />
+                </div>
+              </div>
+              
               <div className="space-y-2">
-                <Label htmlFor="edit-name">Nome</Label>
+                <Label htmlFor="edit-email">Email</Label>
                 <Input 
-                  id="edit-name" 
-                  value={name} 
-                  onChange={(e) => setName(e.target.value)} 
-                  placeholder="Nome"
+                  id="edit-email" 
+                  type="email" 
+                  value={email} 
+                  onChange={(e) => setEmail(e.target.value)} 
+                  placeholder="email@exemplo.com"
+                  required
                 />
               </div>
+              
               <div className="space-y-2">
-                <Label htmlFor="edit-lastName">Sobrenome</Label>
+                <Label htmlFor="edit-password">
+                  Senha <span className="text-xs text-muted-foreground">(deixe em branco para manter a atual)</span>
+                </Label>
                 <Input 
-                  id="edit-lastName" 
-                  value={lastName} 
-                  onChange={(e) => setLastName(e.target.value)} 
-                  placeholder="Sobrenome"
+                  id="edit-password" 
+                  type="password" 
+                  value={password} 
+                  onChange={(e) => setPassword(e.target.value)} 
+                  placeholder="••••••••"
                 />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="edit-whatsapp">WhatsApp</Label>
+                <Input 
+                  id="edit-whatsapp" 
+                  value={whatsapp} 
+                  onChange={handleWhatsappChange} 
+                  placeholder="(99) 9 9999-9999"
+                  required
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="edit-sector">Setor</Label>
+                <Select value={sector} onValueChange={setSector} required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o setor" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {sectors.map((s) => (
+                      <SelectItem key={s} value={s}>
+                        {s}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="edit-role">Permissão</Label>
+                <Select value={role} onValueChange={(value: 'admin' | 'normal') => setRole(value)} required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o tipo de permissão" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="normal">Normal</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="edit-status">Status</Label>
+                <Select value={status} onValueChange={(value: 'ativo' | 'inativo') => setStatus(value)} required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ativo">Ativo</SelectItem>
+                    <SelectItem value="inativo">Inativo</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="edit-email">Email</Label>
-              <Input 
-                id="edit-email" 
-                type="email" 
-                value={email} 
-                onChange={(e) => setEmail(e.target.value)} 
-                placeholder="email@exemplo.com"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="edit-password">
-                Senha <span className="text-xs text-muted-foreground">(deixe em branco para manter a atual)</span>
-              </Label>
-              <Input 
-                id="edit-password" 
-                type="password" 
-                value={password} 
-                onChange={(e) => setPassword(e.target.value)} 
-                placeholder="••••••••"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="edit-whatsapp">WhatsApp</Label>
-              <Input 
-                id="edit-whatsapp" 
-                value={whatsapp} 
-                onChange={handleWhatsappChange} 
-                placeholder="(99) 9 9999-9999"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="edit-sector">Setor</Label>
-              <Select value={sector} onValueChange={setSector}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o setor" />
-                </SelectTrigger>
-                <SelectContent>
-                  {sectors.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {s}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="edit-role">Permissão</Label>
-              <Select value={role} onValueChange={(value: 'admin' | 'normal') => setRole(value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o tipo de permissão" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="normal">Normal</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="edit-status">Status</Label>
-              <Select value={status} onValueChange={(value: 'ativo' | 'inativo') => setStatus(value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ativo">Ativo</SelectItem>
-                  <SelectItem value="inativo">Inativo</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancelar</Button>
-            <Button className="bg-teal hover:bg-teal/90" onClick={handleUpdateUser}>Salvar</Button>
-          </DialogFooter>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancelar</Button>
+              <Button type="submit" className="bg-teal hover:bg-teal/90">Salvar</Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
       
@@ -491,24 +507,22 @@ const UserManagement = () => {
       <AlertDialog open={isStatusDialogOpen} onOpenChange={setIsStatusDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar alteração de status</AlertDialogTitle>
+            <AlertDialogTitle>
+              {selectedUser?.status === 'ativo' ? 'Desativar Usuário?' : 'Ativar Usuário?'}
+            </AlertDialogTitle>
             <AlertDialogDescription>
               {selectedUser?.status === 'ativo' 
-                ? `Tem certeza que deseja inativar o usuário ${selectedUser?.name} ${selectedUser?.lastName}?`
-                : `Tem certeza que deseja ativar o usuário ${selectedUser?.name} ${selectedUser?.lastName}?`
-              }
+                ? `Isso impedirá ${selectedUser?.name} ${selectedUser?.lastName} de fazer login no sistema.`
+                : `Isso permitirá que ${selectedUser?.name} ${selectedUser?.lastName} faça login no sistema novamente.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction 
-              className={selectedUser?.status === 'ativo' 
-                ? "bg-red-500 hover:bg-red-600 text-white"
-                : "bg-green-500 hover:bg-green-600 text-white"
-              }
               onClick={handleToggleUserStatus}
+              className={selectedUser?.status === 'ativo' ? 'bg-red-500 hover:bg-red-600' : 'bg-green-600 hover:bg-green-700'}
             >
-              {selectedUser?.status === 'ativo' ? 'Inativar' : 'Ativar'}
+              {selectedUser?.status === 'ativo' ? 'Desativar' : 'Ativar'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

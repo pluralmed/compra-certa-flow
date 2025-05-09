@@ -148,7 +148,13 @@ const Dashboard = () => {
       });
     }
     
-    return filtered;
+    // Ordenar pelo ID de forma decrescente (do maior para o menor)
+    return filtered.sort((a, b) => {
+      // Converter para número para garantir ordenação correta
+      const idA = parseInt(a.id);
+      const idB = parseInt(b.id);
+      return idB - idA;
+    });
   }, [requests, user, idFilter, statusFilter, priorityFilter, userFilter, dateRange]);
   
   // Componente simples para o cartão
@@ -457,6 +463,7 @@ const Dashboard = () => {
                   <th className="px-4 py-3 text-left">ID</th>
                   <th className="px-4 py-3 text-left">Data</th>
                   <th className="px-4 py-3 text-left">Cliente</th>
+                  <th className="px-4 py-3 text-left">Solicitante</th>
                   <th className="px-4 py-3 text-left hidden md:table-cell">Tipo</th>
                   <th className="px-4 py-3 text-left hidden sm:table-cell">Prioridade</th>
                   <th className="px-4 py-3 text-left">Status</th>
@@ -466,11 +473,13 @@ const Dashboard = () => {
               <tbody>
                 {currentItems.map(request => {
                   const client = clients.find(c => c.id === request.clientId);
+                  const requestCreator = users.find(u => u.id === request.userId);
                   return (
                     <tr key={request.id} className="text-sm border-b last:border-0 hover:bg-gray-50">
                       <td className="px-4 py-3">#{request.id}</td>
                       <td className="px-4 py-3">{formatDate(request.createdAt)}</td>
                       <td className="px-4 py-3">{client?.name}</td>
+                      <td className="px-4 py-3">{requestCreator ? `${requestCreator.name} ${requestCreator.lastName}` : 'Usuário'}</td>
                       <td className="px-4 py-3 hidden md:table-cell">{formatRequestType(request.type)}</td>
                       <td className="px-4 py-3 hidden sm:table-cell">
                         <span className={`inline-block w-2 h-2 rounded-full ${

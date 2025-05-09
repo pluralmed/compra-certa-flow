@@ -1,8 +1,7 @@
-
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { useData, Status } from '@/context/data/DataContext';
+import { useData } from '@/context/data/DataContext';
 import { Button } from '@/components/ui/button';
 import { 
   Card, 
@@ -44,10 +43,20 @@ const MyRequests = () => {
   
   // Filtered requests
   const filteredRequests = useMemo(() => {
+    let filtered;
     if (statusFilter === 'all') {
-      return userRequests;
+      filtered = userRequests;
+    } else {
+      filtered = userRequests.filter(r => r.status === statusFilter);
     }
-    return userRequests.filter(r => r.status === statusFilter);
+    
+    // Ordenar pelo ID de forma decrescente (do maior para o menor)
+    return filtered.sort((a, b) => {
+      // Converter para número para garantir ordenação correta
+      const idA = parseInt(a.id);
+      const idB = parseInt(b.id);
+      return idB - idA;
+    });
   }, [userRequests, statusFilter]);
 
   return (
@@ -116,6 +125,7 @@ const MyRequests = () => {
                     <TableHead>Data</TableHead>
                     <TableHead>Cliente</TableHead>
                     <TableHead>Unidade</TableHead>
+                    <TableHead>Solicitante</TableHead>
                     <TableHead>Tipo</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
@@ -132,6 +142,7 @@ const MyRequests = () => {
                         <TableCell>{formatDate(request.createdAt)}</TableCell>
                         <TableCell>{client?.name || 'N/A'}</TableCell>
                         <TableCell>{unit?.name || 'N/A'}</TableCell>
+                        <TableCell>{user ? `${user.name} ${user.lastName}` : 'Você'}</TableCell>
                         <TableCell>{request.type}</TableCell>
                         <TableCell>
                           <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs text-white ${getStatusColor(request.status)}`}>

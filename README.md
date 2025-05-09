@@ -36,6 +36,35 @@ npm i
 npm run dev
 ```
 
+## Configuração do Supabase Auth e Tabela Personalizada
+
+Este projeto utiliza o Supabase Auth integrado com uma tabela personalizada `compras_usuarios`. Para que a integração funcione corretamente, siga os passos abaixo:
+
+### 1. Configuração de Variáveis de Ambiente
+
+Crie um arquivo `.env` na raiz do projeto com as seguintes variáveis:
+
+```
+VITE_SUPABASE_URL=https://seu-projeto.supabase.co
+VITE_SUPABASE_ANON_KEY=sua-chave-anon-do-supabase
+```
+
+### 2. Execução das Migrações do Supabase
+
+Execute as migrações SQL no painel de administração do Supabase para configurar os triggers que mantêm as tabelas sincronizadas:
+
+1. Navegue até a pasta `supabase/migrations`
+2. Execute os scripts SQL na interface do Supabase SQL Editor na seguinte ordem:
+   - `20240801000000_sync_auth_users_with_compras_usuarios.sql` (configura os triggers)
+   - `20240801000001_migrate_existing_users.sql` (migra usuários existentes)
+
+### 3. Resumo da Integração
+
+- Ao criar um usuário através da interface da aplicação, ele será registrado tanto na tabela `auth.users` quanto em `compras_usuarios`
+- Ao fazer login, o sistema tentará autenticar pelo Supabase Auth, com fallback para o método legado
+- Os status dos usuários (ativo/inativo) são sincronizados entre as tabelas
+- As senhas são armazenadas de forma segura usando hash bcrypt
+
 **Edit a file directly in GitHub**
 
 - Navigate to the desired file(s).
@@ -59,6 +88,7 @@ This project is built with:
 - React
 - shadcn-ui
 - Tailwind CSS
+- Supabase (Autenticação e Banco de Dados)
 
 ## How can I deploy this project?
 

@@ -26,9 +26,9 @@ interface AuthContextProps {
   loading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
-  addUser: (user: Omit<UserWithPassword, 'id'>) => void;
-  updateUser: (user: UserWithPassword) => void;
-  toggleUserStatus: (id: string) => void;
+  addUser: (user: Omit<UserWithPassword, 'id'>) => Promise<boolean>;
+  updateUser: (user: UserWithPassword) => Promise<boolean>;
+  toggleUserStatus: (id: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
@@ -43,6 +43,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Fetch users from Supabase
   const fetchUsers = useCallback(async () => {
     try {
+      // Buscar usuários da tabela compras_usuarios
       const { data, error } = await supabase
         .from('compras_usuarios')
         .select('*');
@@ -73,93 +74,201 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [toast]);
 
+  // Verificar sessão atual do Supabase Auth
+  const checkCurrentSession = useCallback(async () => {
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error) throw error;
+      
+      if (session) {
+        // Usuário está autenticado no Supabase Auth
+        // Buscar dados complementares da tabela compras_usuarios
+        const { data, error: userError } = await supabase
+          .from('compras_usuarios')
+          .select('*')
+          .eq('email', session.user.email)
+          .single();
+          
+        if (userError) throw userError;
+        
+        if (data) {
+          const loggedInUser: User = {
+            id: data.id.toString(),
+            email: data.email,
+            name: data.nome,
+            lastName: data.sobrenome,
+            whatsapp: data.whatsapp,
+            sector: data.setor,
+            role: data.tipo_permissao as 'admin' | 'normal',
+            status: (data.status || 'ativo') as 'ativo' | 'inativo',
+          };
+          
+          setUser(loggedInUser);
+          localStorage.setItem('user', JSON.stringify(loggedInUser));
+        }
+      } else {
+        // Verificar localStorage como fallback para compatibilidade
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+          try {
+            const parsedUser = JSON.parse(storedUser);
+            setUser(parsedUser);
+          } catch (e) {
+            console.error("Erro ao analisar dados do usuário do localStorage:", e);
+            localStorage.removeItem('user');
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Erro ao verificar sessão:", error);
+      // Limpar dados locais se houver erro de sessão
+      localStorage.removeItem('user');
+      setUser(null);
+    }
+  }, []);
+
   // Check if user is logged in on mount
   useEffect(() => {
-    // Verificar se há dados do usuário no localStorage
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      try {
-        const parsedUser = JSON.parse(storedUser);
-        setUser(parsedUser);
-      } catch (e) {
-        console.error("Erro ao analisar dados do usuário do localStorage:", e);
-        localStorage.removeItem('user');
-      }
-    }
-    
-    // Buscar todos os usuários e finalizar carregamento
-    fetchUsers().finally(() => setLoading(false));
-  }, [fetchUsers]);
+    // Verificar sessão atual e buscar usuários
+    checkCurrentSession()
+      .then(() => fetchUsers())
+      .finally(() => setLoading(false));
+  }, [checkCurrentSession, fetchUsers]);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     setLoading(true);
     
     try {
-      // Buscar usuário por email
-      const { data: userData, error: userError } = await supabase
-        .from('compras_usuarios')
-        .select('*')
-        .eq('email', email)
-        .single();
-          
-      if (userError) {
-        throw new Error("Usuário não encontrado");
-      }
+      // 1. Tentar login pelo Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
       
-      // Verificar se a conta está inativa
-      if (userData.status === 'inativo') {
-        throw new Error("Usuário inativo");
-      }
-      
-      // Verificar se a senha armazenada está em formato hash
-      const isPasswordHashed = userData.senha.startsWith('$2') && userData.senha.length > 50;
-      
-      // Se a senha estiver em hash, verificar com bcrypt
-      // Se não, comparar diretamente (legado)
-      let passwordMatches = false;
-      
-      if (isPasswordHashed) {
-        passwordMatches = await bcrypt.compare(password, userData.senha);
-      } else {
-        passwordMatches = password === userData.senha;
-        
-        // Atualizar para hash se a senha estiver em texto plano
-        if (passwordMatches) {
-          const hashedPassword = await bcrypt.hash(password, 10);
-          
-          // Atualizar a senha para o formato hash
-          await supabase
-            .from('compras_usuarios')
-            .update({ senha: hashedPassword })
-            .eq('id', userData.id);
+      if (authError) {
+        // Se não conseguir autenticar pelo auth nativo, tente pelo método legado
+        // Buscar usuário por email na tabela compras_usuarios
+        const { data: userData, error: userError } = await supabase
+          .from('compras_usuarios')
+          .select('*')
+          .eq('email', email)
+          .single();
+            
+        if (userError) {
+          throw new Error("Usuário não encontrado");
         }
-      }
-      
-      if (!passwordMatches) {
-        throw new Error("Senha incorreta");
-      }
-      
-      // Login bem-sucedido
-      const loggedInUser: User = {
-        id: userData.id.toString(),
-        email: userData.email,
-        name: userData.nome,
-        lastName: userData.sobrenome,
-        whatsapp: userData.whatsapp,
-        sector: userData.setor,
-        role: userData.tipo_permissao as 'admin' | 'normal',
-        status: (userData.status || 'ativo') as 'ativo' | 'inativo',
-      };
-      
-      setUser(loggedInUser);
-      localStorage.setItem('user', JSON.stringify(loggedInUser));
-      
-      // Update last login timestamp
-      await supabase
-        .from('compras_usuarios')
-        .update({ ultimo_login: new Date().toISOString() })
-        .eq('id', userData.id);
         
+        // Verificar se a conta está inativa
+        if (userData.status === 'inativo') {
+          throw new Error("Usuário inativo");
+        }
+        
+        // Verificar senha com bcrypt
+        const isPasswordHashed = userData.senha.startsWith('$2') && userData.senha.length > 50;
+        
+        let passwordMatches = false;
+        
+        if (isPasswordHashed) {
+          passwordMatches = await bcrypt.compare(password, userData.senha);
+        } else {
+          passwordMatches = password === userData.senha;
+          
+          // Atualizar para hash se a senha estiver em texto plano
+          if (passwordMatches) {
+            const hashedPassword = await bcrypt.hash(password, 10);
+            
+            await supabase
+              .from('compras_usuarios')
+              .update({ senha: hashedPassword })
+              .eq('id', userData.id);
+          }
+        }
+        
+        if (!passwordMatches) {
+          throw new Error("Senha incorreta");
+        }
+        
+        // Se a autenticação legada foi bem-sucedida, crie um usuário no sistema de auth
+        // e vincule com o usuário existente
+        const { error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              compras_user_id: userData.id.toString()
+            }
+          }
+        });
+        
+        if (signUpError) {
+          console.warn("Não foi possível criar usuário no sistema de auth:", signUpError);
+        }
+        
+        // Login bem-sucedido via método legado
+        const loggedInUser: User = {
+          id: userData.id.toString(),
+          email: userData.email,
+          name: userData.nome,
+          lastName: userData.sobrenome,
+          whatsapp: userData.whatsapp,
+          sector: userData.setor,
+          role: userData.tipo_permissao as 'admin' | 'normal',
+          status: (userData.status || 'ativo') as 'ativo' | 'inativo',
+        };
+        
+        setUser(loggedInUser);
+        localStorage.setItem('user', JSON.stringify(loggedInUser));
+        
+        // Update last login timestamp
+        await supabase
+          .from('compras_usuarios')
+          .update({ ultimo_login: new Date().toISOString() })
+          .eq('id', userData.id);
+      } else {
+        // Login via Supabase Auth bem-sucedido
+        // Buscar dados complementares da tabela compras_usuarios
+        const { data: userData, error: userError } = await supabase
+          .from('compras_usuarios')
+          .select('*')
+          .eq('email', email)
+          .single();
+        
+        if (userError) {
+          // Este usuário existe no auth mas não na tabela compras_usuarios
+          // Isso não deveria acontecer, mas se acontecer, fazer logout
+          await supabase.auth.signOut();
+          throw new Error("Usuário não encontrado no sistema interno");
+        }
+        
+        // Verificar se a conta está inativa
+        if (userData.status === 'inativo') {
+          await supabase.auth.signOut();
+          throw new Error("Usuário inativo");
+        }
+        
+        // Login bem-sucedido via Supabase Auth
+        const loggedInUser: User = {
+          id: userData.id.toString(),
+          email: userData.email,
+          name: userData.nome,
+          lastName: userData.sobrenome,
+          whatsapp: userData.whatsapp,
+          sector: userData.setor,
+          role: userData.tipo_permissao as 'admin' | 'normal',
+          status: (userData.status || 'ativo') as 'ativo' | 'inativo',
+        };
+        
+        setUser(loggedInUser);
+        localStorage.setItem('user', JSON.stringify(loggedInUser));
+        
+        // Update last login timestamp
+        await supabase
+          .from('compras_usuarios')
+          .update({ ultimo_login: new Date().toISOString() })
+          .eq('id', userData.id);
+      }
+      
       setLoading(false);
       return true;
     } catch (error) {
@@ -180,18 +289,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = async () => {
-    // Limpar dados locais
-    setUser(null);
-    localStorage.removeItem('user');
-    navigate('/login');
+    try {
+      // Fazer logout do Supabase Auth
+      await supabase.auth.signOut();
+      
+      // Limpar dados locais
+      setUser(null);
+      localStorage.removeItem('user');
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Mesmo com erro, limpar dados locais
+      setUser(null);
+      localStorage.removeItem('user');
+      navigate('/login');
+    }
   };
 
-  const addUser = async (newUser: Omit<UserWithPassword, 'id'>) => {
+  const addUser = async (newUser: Omit<UserWithPassword, 'id'>): Promise<boolean> => {
     try {
-      // Hash da senha antes de armazenar
+      // Hash da senha para a tabela compras_usuarios
       const hashedPassword = await bcrypt.hash(newUser.password, 10);
       
-      // Criar o usuário na tabela compras_usuarios
+      // Criar primeiro na tabela compras_usuarios
       const { data, error } = await supabase
         .from('compras_usuarios')
         .insert({
@@ -210,6 +330,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error) throw error;
 
       if (data) {
+        // Tentar agora criar o usuário no sistema de auth do Supabase
+        const { error: signUpError } = await supabase.auth.signUp({
+          email: newUser.email,
+          password: newUser.password,
+          options: {
+            data: {
+              name: newUser.name,
+              last_name: newUser.lastName,
+              compras_user_id: data.id.toString()
+            }
+          }
+        });
+        
+        if (signUpError) {
+          console.warn("Não foi possível criar usuário no sistema de auth:", signUpError);
+          // Continuar mesmo se falhar no auth, pois o usuário já foi criado na tabela compras_usuarios
+        }
+
         const userWithId: User = {
           id: data.id.toString(),
           email: data.email,
@@ -227,7 +365,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           title: "Usuário criado",
           description: `${newUser.name} ${newUser.lastName} foi adicionado com sucesso.`,
         });
+        
+        return true;
       }
+      
+      return false;
     } catch (error) {
       console.error('Error adding user:', error);
       toast({
@@ -235,17 +377,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         description: "Não foi possível adicionar o usuário.",
         variant: "destructive",
       });
+      return false;
     }
   };
 
-  const updateUser = async (updatedUser: UserWithPassword) => {
+  const updateUser = async (updatedUser: UserWithPassword): Promise<boolean> => {
     try {
-      // Se a senha foi alterada, fazer hash
+      // Hash da senha se foi alterada
       let hashedPassword;
-      
-      // Verificar se a senha foi alterada comparando com o usuário atual
-      const currentUser = users.find(u => u.id === updatedUser.id);
-      const passwordChanged = !currentUser || updatedUser.password;
+      const passwordChanged = updatedUser.password && updatedUser.password.length > 0;
       
       if (passwordChanged) {
         hashedPassword = await bcrypt.hash(updatedUser.password, 10);
@@ -282,10 +422,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       setUsers(users.map(u => u.id === updatedUser.id ? updatedUserWithoutPassword : u));
       
+      // Se a senha foi alterada, enviar email para redefinição de senha
+      if (passwordChanged) {
+        try {
+          await supabase.auth.resetPasswordForEmail(updatedUser.email).catch(e => {
+            console.warn("Não foi possível enviar email de redefinição de senha:", e);
+          });
+        } catch (e) {
+          console.warn("Erro ao tentar enviar email para redefinição de senha:", e);
+        }
+      }
+      
       toast({
         title: "Usuário atualizado",
         description: `${updatedUser.name} ${updatedUser.lastName} foi atualizado com sucesso.`,
       });
+      
+      return true;
     } catch (error) {
       console.error('Error updating user:', error);
       toast({
@@ -293,13 +446,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         description: "Não foi possível atualizar o usuário.",
         variant: "destructive",
       });
+      return false;
     }
   };
 
-  const toggleUserStatus = async (id: string) => {
+  const toggleUserStatus = async (id: string): Promise<boolean> => {
     try {
       const userToToggle = users.find(u => u.id === id);
-      if (!userToToggle) return;
+      if (!userToToggle) return false;
       
       // Alternar o status
       const newStatus = userToToggle.status === 'ativo' ? 'inativo' : 'ativo';
@@ -311,6 +465,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .eq('id', parseInt(id));
 
       if (error) throw error;
+      
+      // Se o usuário for inativado, desabilitar no auth do Supabase
+      if (newStatus === 'inativo') {
+        await supabase.auth.admin.updateUserById(id, {
+          user_metadata: { disabled: true }
+        }).catch(e => {
+          console.warn("Não foi possível desabilitar usuário no auth:", e);
+        });
+      } else {
+        // Se o usuário for reativado, reabilitar no auth do Supabase
+        await supabase.auth.admin.updateUserById(id, {
+          user_metadata: { disabled: false }
+        }).catch(e => {
+          console.warn("Não foi possível reabilitar usuário no auth:", e);
+        });
+      }
 
       // Atualizar o estado local
       setUsers(users.map(u => u.id === id ? { ...u, status: newStatus as 'ativo' | 'inativo' } : u));
@@ -319,6 +489,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         title: newStatus === 'ativo' ? "Usuário ativado" : "Usuário inativado",
         description: `${userToToggle.name} ${userToToggle.lastName} foi ${newStatus === 'ativo' ? 'ativado' : 'inativado'} com sucesso.`,
       });
+      
+      return true;
     } catch (error) {
       console.error('Error toggling user status:', error);
       toast({
@@ -326,6 +498,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         description: "Não foi possível alterar o status do usuário.",
         variant: "destructive",
       });
+      return false;
     }
   };
 
