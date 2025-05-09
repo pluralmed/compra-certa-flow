@@ -1,0 +1,322 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useData } from '@/context/data/DataContext';
+import { Request, Client, Unit, Budget, Item, RequestType, Priority } from '@/context/data/types';
+import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Separator } from "@/components/ui/separator"
+import { Button } from "@/components/ui/button"
+import { Plus, X } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+
+const NewRequest = () => {
+  const { clients, units, budgets, items: availableItems, createRequest } = useData();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  
+  const [client, setClient] = useState<Client | null>(null);
+  const [unit, setUnit] = useState<Unit | null>(null);
+  const [budget, setBudget] = useState<Budget | null>(null);
+  const [type, setType] = useState<RequestType>('Compra direta');
+  const [justification, setJustification] = useState('');
+  const [priority, setPriority] = useState<Priority>('Moderado');
+  const [items, setItems] = useState<({ id: string; name: string; quantity: number })[]>([]);
+  const [newItemName, setNewItemName] = useState('');
+  const [newItemQuantity, setNewItemQuantity] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [confirmationId, setConfirmationId] = useState<string | null>(null);
+  
+  useEffect(() => {
+    if (showConfirmation && confirmationId) {
+      const timer = setTimeout(() => {
+        setShowConfirmation(false);
+        navigate(`/solicitacao/${confirmationId}`);
+      }, 3000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [showConfirmation, confirmationId, navigate]);
+  
+  const handleAddItem = () => {
+    if (newItemName && newItemQuantity > 0) {
+      const selectedItem = availableItems.find(item => item.name === newItemName);
+      if (selectedItem) {
+        setItems([...items, { id: selectedItem.id, name: selectedItem.name, quantity: newItemQuantity }]);
+        setNewItemName('');
+        setNewItemQuantity(1);
+      }
+    }
+  };
+  
+  const handleRemoveItem = (index: number) => {
+    const newItems = [...items];
+    newItems.splice(index, 1);
+    setItems(newItems);
+  };
+  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    
+    try {
+      if (!client || !unit || !budget || !user?.id) {
+        toast({
+          title: "Erro",
+          description: "Preencha todos os campos obrigatórios.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!justification.trim()) {
+        toast({
+          title: "Erro",
+          description: "A justificativa é obrigatória.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (items.length === 0) {
+        toast({
+          title: "Erro",
+          description: "Adicione pelo menos um item à solicitação.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const invalidItems = items.filter(item => item.quantity <= 0);
+      if (invalidItems.length > 0) {
+        toast({
+          title: "Erro",
+          description: "Todos os itens devem ter quantidade maior que zero.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      const requestData: Omit<Request, 'id' | 'createdAt' | 'status'> = {
+        clientId: client.id,
+        unitId: unit.id,
+        type,
+        justification: justification.trim(),
+        budgetId: budget.id,
+        priority,
+        userId: user.id,
+        items: items.map(item => ({
+          itemId: item.id,
+          quantity: item.quantity,
+          id: ''  // Será gerado pelo banco
+        }))
+      };
+      
+      const requestId = await createRequest(requestData);
+      setConfirmationId(requestId);
+      setShowConfirmation(true);
+    } catch (error) {
+      console.error("Error submitting request:", error);
+      toast({
+        title: "Erro",
+        description: "Ocorreu um erro ao enviar a solicitação. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+  
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Nova Solicitação</CardTitle>
+          <CardDescription>
+            Preencha os campos abaixo para criar uma nova solicitação de compra.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="client">Cliente</Label>
+              <Select onValueChange={(value) => setClient(clients.find(c => c.id === value) || null)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o cliente" />
+                </SelectTrigger>
+                <SelectContent>
+                  {clients.map((client) => (
+                    <SelectItem key={client.id} value={client.id}>{client.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label htmlFor="unit">Unidade</Label>
+              <Select onValueChange={(value) => setUnit(units.find(u => u.id === value) || null)} disabled={!client}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a unidade" />
+                </SelectTrigger>
+                <SelectContent>
+                  {units.filter(unit => unit.clientId === client?.id).map((unit) => (
+                    <SelectItem key={unit.id} value={unit.id}>{unit.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          <div>
+            <Label htmlFor="budget">Rubrica</Label>
+            <Select onValueChange={(value) => setBudget(budgets.find(b => b.id === value) || null)} disabled={!client}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione a rubrica" />
+              </SelectTrigger>
+              <SelectContent>
+                {budgets.filter(budget => budget.clientId === client?.id).map((budget) => (
+                  <SelectItem key={budget.id} value={budget.id}>{budget.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div>
+            <Label htmlFor="type">Tipo de Solicitação</Label>
+            <Select onValueChange={(value: RequestType) => setType(value)} defaultValue="Compra direta">
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Compra direta">Compra direta</SelectItem>
+                <SelectItem value="Cotação">Cotação</SelectItem>
+                <SelectItem value="Serviço">Serviço</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div>
+            <Label htmlFor="justification">Justificativa</Label>
+            <Textarea
+              id="justification"
+              placeholder="Descreva a necessidade desta solicitação"
+              value={justification}
+              onChange={(e) => setJustification(e.target.value)}
+            />
+          </div>
+          
+          <div>
+            <Label htmlFor="priority">Prioridade</Label>
+            <Select onValueChange={(value: Priority) => setPriority(value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione a prioridade" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Moderado">Moderado</SelectItem>
+                <SelectItem value="Urgente">Urgente</SelectItem>
+                <SelectItem value="Emergencial">Emergencial</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Itens da Solicitação</CardTitle>
+          <CardDescription>
+            Adicione os itens que você deseja solicitar.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center space-x-2">
+            <Input
+              type="text"
+              placeholder="Nome do item"
+              value={newItemName}
+              onChange={(e) => setNewItemName(e.target.value)}
+              list="itemsList"
+            />
+            <datalist id="itemsList">
+              {availableItems.map((item) => (
+                <option key={item.id} value={item.name} />
+              ))}
+            </datalist>
+            
+            <Input
+              type="number"
+              placeholder="Quantidade"
+              value={newItemQuantity}
+              onChange={(e) => setNewItemQuantity(parseInt(e.target.value))}
+              className="w-24"
+            />
+            
+            <Button type="button" onClick={handleAddItem}>
+              <Plus className="mr-2 h-4 w-4" />
+              Adicionar
+            </Button>
+          </div>
+          
+          <Separator />
+          
+          {items.length === 0 ? (
+            <p className="text-muted-foreground">Nenhum item adicionado.</p>
+          ) : (
+            <ul className="space-y-2">
+              {items.map((item, index) => (
+                <li key={index} className="flex items-center justify-between">
+                  <span>{item.name} - Quantidade: {item.quantity}</span>
+                  <Button type="button" variant="ghost" size="icon" onClick={() => handleRemoveItem(index)}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
+      
+      <Button type="submit" className="w-full" disabled={isSubmitting}>
+        {isSubmitting ? "Enviando..." : "Enviar Solicitação"}
+      </Button>
+      
+      <Dialog open={showConfirmation} onOpenChange={setShowConfirmation}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Solicitação enviada!</DialogTitle>
+            <DialogDescription>
+              Sua solicitação foi enviada com sucesso. Você será redirecionado em breve.
+            </DialogDescription>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
+    </form>
+  );
+};
+
+export default NewRequest;

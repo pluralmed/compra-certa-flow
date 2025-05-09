@@ -1,0 +1,79 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 94%;  /* #F0F0F3 */
+    --foreground: 220 10% 25%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    --primary: 189 95% 24%;  /* #036578 */
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 180 100% 38%;  /* #00c2c2 */
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 189 95% 24%;  /* #036578 */
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 189 95% 24%;  /* #036578 */
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 180 100% 38%;  /* #00c2c2 */
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 189 75% 34%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 189 65% 34%;
+    --sidebar-ring: 180 100% 38%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer components {
+  .card-hover {
+    @apply transition-all duration-200 hover:shadow-md hover:-translate-y-1;
+  }
+  
+  .btn-primary {
+    @apply bg-teal text-white hover:bg-opacity-90 transition-all;
+  }
+  
+  .btn-secondary {
+    @apply bg-teal-light text-white hover:bg-opacity-90 transition-all;
+  }
+  
+  .btn-accent {
+    @apply bg-blue text-white hover:bg-opacity-90 transition-all;
+  }
+}
+
+@layer utilities {
+  .status-emoji {
+    @apply text-xl md:text-2xl inline-block mr-2;
+  }
+}
