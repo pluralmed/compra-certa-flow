@@ -65,6 +65,36 @@ Execute as migrações SQL no painel de administração do Supabase para configu
 - Os status dos usuários (ativo/inativo) são sincronizados entre as tabelas
 - As senhas são armazenadas de forma segura usando hash bcrypt
 
+## Configuração do Banco de Dados
+
+Para garantir o correto funcionamento do sistema, é necessário configurar o banco de dados Supabase com as tabelas e políticas de segurança necessárias. Siga os passos abaixo:
+
+1. Faça login no seu painel do Supabase.
+2. Acesse o SQL Editor.
+3. Execute os seguintes scripts SQL na ordem indicada:
+
+### Correção de Políticas RLS para Histórico de Status
+
+Execute o script `fix_rls_policies.sql` para configurar corretamente as políticas RLS para a tabela de histórico de status.
+
+### Políticas RLS para a Tabela de Itens
+
+Execute o script `fix_itens_rls_policies.sql` para configurar as políticas RLS para a tabela de itens, garantindo que os usuários autenticados possam realizar todas as operações necessárias.
+
+### Inserção de Dados de Teste
+
+Execute o script `insert_test_items.sql` para inserir grupos de itens, unidades de medida e itens de teste. Isso é útil para testar o sistema antes de inserir dados reais.
+
+## Problemas Conhecidos e Soluções
+
+### Itens não aparecem na tela de itens
+
+Se os itens não estiverem aparecendo na tela de itens, verifique os seguintes pontos:
+
+1. Execute o script `fix_itens_rls_policies.sql` para garantir que as políticas RLS estejam configuradas corretamente.
+2. Execute o script `insert_test_items.sql` para inserir itens de teste no banco de dados.
+3. Verifique as mensagens de erro no console do navegador para identificar possíveis problemas de conexão com o Supabase.
+
 **Edit a file directly in GitHub**
 
 - Navigate to the desired file(s).

@@ -36,6 +36,8 @@ const Settings = () => {
     updateItem,
     deleteItem,
     getClientById,
+    loading,
+    fetched,
   } = useData();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('clients');
@@ -44,6 +46,25 @@ const Settings = () => {
   if (user?.role !== 'admin') {
     navigate('/');
     return null;
+  }
+  
+  // Debug: verificar dados na tela de configurações
+  React.useEffect(() => {
+    console.log("Settings - items:", items);
+    console.log("Settings - loading:", loading);
+    console.log("Settings - fetched:", fetched);
+  }, [items, loading, fetched]);
+  
+  // Mostrar tela de carregamento enquanto os dados estão sendo buscados
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-[calc(100vh-120px)]">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="h-12 w-12 rounded-full border-4 border-t-teal border-r-teal border-b-transparent border-l-transparent animate-spin"></div>
+          <p className="text-muted-foreground">Carregando dados...</p>
+        </div>
+      </div>
+    );
   }
   
   return (

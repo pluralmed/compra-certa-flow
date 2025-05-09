@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -6,6 +6,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from '@/components/ui/card';
 import { 
   Table, 
@@ -43,9 +44,27 @@ import {
 } from "@/components/ui/select";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Edit, Trash2 } from 'lucide-react';
+import { Plus, Edit, Trash2, AlertCircle, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { formatCurrency } from '@/utils/format';
 import { ItemGroup, UnitOfMeasure } from '@/context/data/types';
+import { useData } from '@/context/data/DataContext';
+import { Badge } from '@/components/ui/badge';
+
+// Objeto de grupo padrão para quando não existir grupo
+const DEFAULT_GROUP: ItemGroup = {
+  id: '0',
+  name: 'Sem grupo'
+};
+
+// Objeto de unidade de medida padrão para quando não existir unidade
+const DEFAULT_UNIT_OF_MEASURE: UnitOfMeasure = {
+  id: '0',
+  name: 'Não definida',
+  abbreviation: 'N/D'
+};
+
+// Configuração de paginação
+const ITENS_POR_PAGINA = 5;
 
 interface ItemsTabProps {
   items: any[];
@@ -60,44 +79,103 @@ const ItemsTab: React.FC<ItemsTabProps> = ({
   updateItem,
   deleteItem,
 }) => {
+  // Usar o contexto de dados para acessar os grupos de itens e unidades de medida
+  const { itemGroups, unitsOfMeasure } = useData();
+  
+  // Adicionar os valores padrão às listas, se ainda não existirem
+  const allItemGroups = [DEFAULT_GROUP, ...itemGroups.filter(g => g.id !== '0')];
+  const allUnitsOfMeasure = [DEFAULT_UNIT_OF_MEASURE, ...unitsOfMeasure.filter(u => u.id !== '0')];
+  
   // Dialog states
   const [isAddItemOpen, setIsAddItemOpen] = useState(false);
   const [isEditItemOpen, setIsEditItemOpen] = useState(false);
   const [isDeleteItemOpen, setIsDeleteItemOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>(null);
   
+  // Estado de busca
+  const [termoBusca, setTermoBusca] = useState('');
+  const [itensFiltrados, setItensFiltrados] = useState(items);
+  
+  // Estados de paginação
+  const [paginaAtual, setPaginaAtual] = useState(1);
+  const totalPaginas = Math.ceil(itensFiltrados.length / ITENS_POR_PAGINA);
+  
+  // Atualizar itens filtrados quando a busca mudar
+  useEffect(() => {
+    if (!termoBusca.trim()) {
+      setItensFiltrados(items);
+    } else {
+      const termoLowerCase = termoBusca.toLowerCase();
+      const resultado = items.filter(item => 
+        item.name.toLowerCase().includes(termoLowerCase) || 
+        item.group.name.toLowerCase().includes(termoLowerCase) ||
+        item.unitOfMeasure.name.toLowerCase().includes(termoLowerCase) ||
+        item.unitOfMeasure.abbreviation.toLowerCase().includes(termoLowerCase)
+      );
+      setItensFiltrados(resultado);
+    }
+    // Volta para a primeira página quando o filtro mudar
+    setPaginaAtual(1);
+  }, [termoBusca, items]);
+  
+  // Itens da página atual
+  const itensPaginados = itensFiltrados.slice(
+    (paginaAtual - 1) * ITENS_POR_PAGINA,
+    paginaAtual * ITENS_POR_PAGINA
+  );
+  
+  // Funções de navegação da paginação
+  const irParaPaginaAnterior = () => {
+    if (paginaAtual > 1) {
+      setPaginaAtual(paginaAtual - 1);
+    }
+  };
+  
+  const irParaProximaPagina = () => {
+    if (paginaAtual < totalPaginas) {
+      setPaginaAtual(paginaAtual + 1);
+    }
+  };
+  
   // Form states
   const [itemName, setItemName] = useState('');
-  const [itemGroupName, setItemGroupName] = useState<string>('Materiais');
-  const [itemUnitOfMeasureName, setItemUnitOfMeasureName] = useState<string>('UN');
+  const [itemGroupId, setItemGroupId] = useState<string>('');
+  const [itemUnitOfMeasureId, setItemUnitOfMeasureId] = useState<string>('');
   const [itemAveragePrice, setItemAveragePrice] = useState('');
   
   const resetItemForm = () => {
-    setItemGroupName('Materiais');
+    setItemGroupId(allItemGroups.length > 0 ? allItemGroups[0].id : '');
     setItemName('');
-    setItemUnitOfMeasureName('UN');
+    setItemUnitOfMeasureId(allUnitsOfMeasure.length > 0 ? allUnitsOfMeasure[0].id : '');
     setItemAveragePrice('');
   };
   
   // Item handlers
   const handleAddItem = () => {
-    // Create proper ItemGroup and UnitOfMeasure objects
+    // Encontrar o grupo selecionado pelo id
+    const selectedGroup = allItemGroups.find(group => group.id === itemGroupId);
+    if (!selectedGroup) return;
+    
+    // Encontrar a unidade de medida selecionada pelo id
+    const selectedUnitOfMeasure = allUnitsOfMeasure.find(unit => unit.id === itemUnitOfMeasureId);
+    if (!selectedUnitOfMeasure) return;
+    
     const group: ItemGroup = {
-      id: "1", // This would normally come from your itemGroups data
-      name: itemGroupName
+      id: selectedGroup.id,
+      name: selectedGroup.name
     };
     
     const unitOfMeasure: UnitOfMeasure = {
-      id: "1", // This would normally come from your unitsOfMeasure data
-      name: itemUnitOfMeasureName,
-      abbreviation: itemUnitOfMeasureName
+      id: selectedUnitOfMeasure.id,
+      name: selectedUnitOfMeasure.name,
+      abbreviation: selectedUnitOfMeasure.abbreviation
     };
     
     addItem({
       name: itemName,
       group,
       unitOfMeasure,
-      averagePrice: parseFloat(itemAveragePrice),
+      averagePrice: parseFloat(itemAveragePrice) || 0,
     });
     resetItemForm();
     setIsAddItemOpen(false);
@@ -106,16 +184,23 @@ const ItemsTab: React.FC<ItemsTabProps> = ({
   const handleUpdateItem = () => {
     if (!selectedItem) return;
     
-    // Create proper ItemGroup and UnitOfMeasure objects
+    // Encontrar o grupo selecionado pelo id
+    const selectedGroup = allItemGroups.find(group => group.id === itemGroupId);
+    if (!selectedGroup) return;
+    
+    // Encontrar a unidade de medida selecionada pelo id
+    const selectedUnitOfMeasure = allUnitsOfMeasure.find(unit => unit.id === itemUnitOfMeasureId);
+    if (!selectedUnitOfMeasure) return;
+    
     const group: ItemGroup = {
-      id: selectedItem.group.id,
-      name: itemGroupName
+      id: selectedGroup.id,
+      name: selectedGroup.name
     };
     
     const unitOfMeasure: UnitOfMeasure = {
-      id: selectedItem.unitOfMeasure.id,
-      name: itemUnitOfMeasureName,
-      abbreviation: itemUnitOfMeasureName
+      id: selectedUnitOfMeasure.id,
+      name: selectedUnitOfMeasure.name,
+      abbreviation: selectedUnitOfMeasure.abbreviation
     };
     
     updateItem({
@@ -123,7 +208,7 @@ const ItemsTab: React.FC<ItemsTabProps> = ({
       name: itemName,
       group,
       unitOfMeasure,
-      averagePrice: parseFloat(itemAveragePrice),
+      averagePrice: parseFloat(itemAveragePrice) || 0,
     });
     resetItemForm();
     setIsEditItemOpen(false);
@@ -137,9 +222,9 @@ const ItemsTab: React.FC<ItemsTabProps> = ({
   
   const openEditItemDialog = (item: any) => {
     setSelectedItem(item);
-    setItemGroupName(item.group.name);
+    setItemGroupId(item.group.id);
     setItemName(item.name);
-    setItemUnitOfMeasureName(item.unitOfMeasure.abbreviation);
+    setItemUnitOfMeasureId(item.unitOfMeasure.id);
     setItemAveragePrice(item.averagePrice.toString());
     setIsEditItemOpen(true);
   };
@@ -147,6 +232,67 @@ const ItemsTab: React.FC<ItemsTabProps> = ({
   const openDeleteItemDialog = (item: any) => {
     setSelectedItem(item);
     setIsDeleteItemOpen(true);
+  };
+  
+  // Inicializar valores padrão quando os dados são carregados
+  React.useEffect(() => {
+    if (allItemGroups.length > 0 && !itemGroupId) {
+      setItemGroupId(allItemGroups[0].id);
+    }
+    
+    if (allUnitsOfMeasure.length > 0 && !itemUnitOfMeasureId) {
+      setItemUnitOfMeasureId(allUnitsOfMeasure[0].id);
+    }
+  }, [allItemGroups, allUnitsOfMeasure, itemGroupId, itemUnitOfMeasureId]);
+  
+  // Debug: verificar se os itens estão sendo recebidos
+  React.useEffect(() => {
+    console.log("ItemsTab - items recebidos:", items);
+    console.log("ItemsTab - grupos de itens:", allItemGroups);
+    console.log("ItemsTab - unidades de medida:", allUnitsOfMeasure);
+  }, [items, allItemGroups, allUnitsOfMeasure]);
+  
+  // Função para renderizar a célula do grupo com destaque visual se for o grupo padrão
+  const renderGroupCell = (group: ItemGroup) => {
+    if (group.id === '0') {
+      return (
+        <div className="flex items-center gap-1">
+          <Badge variant="outline" className="bg-yellow-50 text-yellow-800 border-yellow-300">
+            {group.name}
+          </Badge>
+          <AlertCircle className="h-4 w-4 text-yellow-500" />
+        </div>
+      );
+    }
+    return group.name;
+  };
+  
+  // Função para renderizar a célula da unidade de medida com destaque visual se for a unidade padrão
+  const renderUnitOfMeasureCell = (unitOfMeasure: UnitOfMeasure) => {
+    if (unitOfMeasure.id === '0') {
+      return (
+        <div className="flex items-center gap-1">
+          <Badge variant="outline" className="bg-yellow-50 text-yellow-800 border-yellow-300">
+            {unitOfMeasure.abbreviation}
+          </Badge>
+          <AlertCircle className="h-4 w-4 text-yellow-500" />
+        </div>
+      );
+    }
+    return unitOfMeasure.abbreviation;
+  };
+  
+  // Função para renderizar a célula do preço médio com destaque visual se for zero
+  const renderAveragePriceCell = (averagePrice: number) => {
+    if (averagePrice === 0) {
+      return (
+        <div className="flex items-center gap-1">
+          <span className="text-yellow-500">{formatCurrency(averagePrice)}</span>
+          <AlertCircle className="h-4 w-4 text-yellow-500" />
+        </div>
+      );
+    }
+    return formatCurrency(averagePrice);
   };
   
   return (
@@ -173,17 +319,18 @@ const ItemsTab: React.FC<ItemsTabProps> = ({
                 <div className="space-y-2">
                   <Label htmlFor="itemGroup">Grupo</Label>
                   <Select 
-                    value={itemGroupName} 
-                    onValueChange={(value: string) => setItemGroupName(value)}
+                    value={itemGroupId} 
+                    onValueChange={(value: string) => setItemGroupId(value)}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione o grupo" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Materiais">Materiais</SelectItem>
-                      <SelectItem value="Equipamentos">Equipamentos</SelectItem>
-                      <SelectItem value="Serviços">Serviços</SelectItem>
-                      <SelectItem value="Outros">Outros</SelectItem>
+                      {allItemGroups.map((group) => (
+                        <SelectItem key={group.id} value={group.id}>
+                          {group.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -199,21 +346,18 @@ const ItemsTab: React.FC<ItemsTabProps> = ({
                 <div className="space-y-2">
                   <Label htmlFor="itemUnitOfMeasure">Unidade de Medida</Label>
                   <Select 
-                    value={itemUnitOfMeasureName} 
-                    onValueChange={(value: string) => setItemUnitOfMeasureName(value)}
+                    value={itemUnitOfMeasureId} 
+                    onValueChange={(value: string) => setItemUnitOfMeasureId(value)}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione a unidade" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="UN">UN</SelectItem>
-                      <SelectItem value="CX">CX</SelectItem>
-                      <SelectItem value="KG">KG</SelectItem>
-                      <SelectItem value="L">L</SelectItem>
-                      <SelectItem value="M">M</SelectItem>
-                      <SelectItem value="M²">M²</SelectItem>
-                      <SelectItem value="M³">M³</SelectItem>
-                      <SelectItem value="PCT">PCT</SelectItem>
+                      {allUnitsOfMeasure.map((unit) => (
+                        <SelectItem key={unit.id} value={unit.id}>
+                          {unit.name} ({unit.abbreviation})
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -237,6 +381,17 @@ const ItemsTab: React.FC<ItemsTabProps> = ({
           </Dialog>
         </CardHeader>
         <CardContent>
+          <div className="relative mb-4">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Buscar itens por nome, grupo ou unidade..."
+              className="w-full pl-8 bg-white"
+              value={termoBusca}
+              onChange={(e) => setTermoBusca(e.target.value)}
+            />
+          </div>
+
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
@@ -249,12 +404,12 @@ const ItemsTab: React.FC<ItemsTabProps> = ({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {items.map(item => (
-                  <TableRow key={item.id}>
-                    <TableCell>{item.group.name}</TableCell>
+                {itensPaginados.map(item => (
+                  <TableRow key={item.id} className={item.group.id === '0' || item.unitOfMeasure.id === '0' ? "bg-yellow-50" : ""}>
+                    <TableCell>{renderGroupCell(item.group)}</TableCell>
                     <TableCell className="font-medium">{item.name}</TableCell>
-                    <TableCell>{item.unitOfMeasure.abbreviation}</TableCell>
-                    <TableCell>{formatCurrency(item.averagePrice)}</TableCell>
+                    <TableCell>{renderUnitOfMeasureCell(item.unitOfMeasure)}</TableCell>
+                    <TableCell>{renderAveragePriceCell(item.averagePrice)}</TableCell>
                     <TableCell className="text-right space-x-2">
                       <Button 
                         size="sm" 
@@ -274,10 +429,10 @@ const ItemsTab: React.FC<ItemsTabProps> = ({
                     </TableCell>
                   </TableRow>
                 ))}
-                {items.length === 0 && (
+                {itensFiltrados.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">
-                      Nenhum item encontrado.
+                      {termoBusca ? `Nenhum item encontrado para "${termoBusca}"` : "Nenhum item encontrado."}
                     </TableCell>
                   </TableRow>
                 )}
@@ -285,6 +440,38 @@ const ItemsTab: React.FC<ItemsTabProps> = ({
             </Table>
           </div>
         </CardContent>
+        {itensFiltrados.length > 0 && (
+          <CardFooter className="flex items-center justify-between py-4 border-t">
+            <div className="text-sm text-muted-foreground">
+              Mostrando {itensPaginados.length} de {itensFiltrados.length} itens
+              {items.length !== itensFiltrados.length && ` (filtrados de ${items.length} no total)`}
+            </div>
+            
+            <div className="flex items-center gap-1">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={irParaPaginaAnterior}
+                disabled={paginaAtual === 1}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              
+              <div className="text-sm px-4 py-1 rounded border">
+                {paginaAtual} / {totalPaginas || 1}
+              </div>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={irParaProximaPagina}
+                disabled={paginaAtual === totalPaginas || totalPaginas === 0}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardFooter>
+        )}
       </Card>
       
       {/* Edit Item Dialog */}
@@ -298,17 +485,18 @@ const ItemsTab: React.FC<ItemsTabProps> = ({
             <div className="space-y-2">
               <Label htmlFor="editItemGroup">Grupo</Label>
               <Select 
-                value={itemGroupName} 
-                onValueChange={(value: string) => setItemGroupName(value)}
+                value={itemGroupId} 
+                onValueChange={(value: string) => setItemGroupId(value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione o grupo" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Materiais">Materiais</SelectItem>
-                  <SelectItem value="Equipamentos">Equipamentos</SelectItem>
-                  <SelectItem value="Serviços">Serviços</SelectItem>
-                  <SelectItem value="Outros">Outros</SelectItem>
+                  {allItemGroups.map((group) => (
+                    <SelectItem key={group.id} value={group.id}>
+                      {group.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -324,21 +512,18 @@ const ItemsTab: React.FC<ItemsTabProps> = ({
             <div className="space-y-2">
               <Label htmlFor="editItemUnitOfMeasure">Unidade de Medida</Label>
               <Select 
-                value={itemUnitOfMeasureName} 
-                onValueChange={(value: string) => setItemUnitOfMeasureName(value)}
+                value={itemUnitOfMeasureId} 
+                onValueChange={(value: string) => setItemUnitOfMeasureId(value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione a unidade" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="UN">UN</SelectItem>
-                  <SelectItem value="CX">CX</SelectItem>
-                  <SelectItem value="KG">KG</SelectItem>
-                  <SelectItem value="L">L</SelectItem>
-                  <SelectItem value="M">M</SelectItem>
-                  <SelectItem value="M²">M²</SelectItem>
-                  <SelectItem value="M³">M³</SelectItem>
-                  <SelectItem value="PCT">PCT</SelectItem>
+                  {allUnitsOfMeasure.map((unit) => (
+                    <SelectItem key={unit.id} value={unit.id}>
+                      {unit.name} ({unit.abbreviation})
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

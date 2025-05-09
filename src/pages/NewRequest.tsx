@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useData } from '@/context/data/DataContext';
-import { Request, Client, Unit, Budget, Item, RequestType, Priority } from '@/context/data/types';
+import { Request, Client, Unit, Budget, Item, RequestType, Priority, ItemGroup } from '@/context/data/types';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -36,8 +36,16 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Badge } from "@/components/ui/badge"
 
+// Tipo para item temporário/selecionado
+interface TempItem {
+  id: string;
+  name: string;
+  quantity: number;
+  unitOfMeasure?: string;
+}
+
 const NewRequest = () => {
-  const { clients, units, budgets, items: availableItems, createRequest } = useData();
+  const { clients, units, budgets, items: availableItems, itemGroups, createRequest } = useData();
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -48,7 +56,7 @@ const NewRequest = () => {
   const [type, setType] = useState<RequestType>('Compra direta');
   const [justification, setJustification] = useState('');
   const [priority, setPriority] = useState<Priority>('Moderado');
-  const [items, setItems] = useState<({ id: string; name: string; quantity: number })[]>([]);
+  const [items, setItems] = useState<TempItem[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [confirmationId, setConfirmationId] = useState<string | null>(null);
@@ -56,8 +64,9 @@ const NewRequest = () => {
   // Estado para o modal de itens
   const [isItemModalOpen, setIsItemModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedItems, setSelectedItems] = useState<{id: string; name: string; quantity: number}[]>([]);
-  const [tempItems, setTempItems] = useState<{id: string; name: string; quantity: number}[]>([]);
+  const [selectedItems, setSelectedItems] = useState<TempItem[]>([]);
+  const [tempItems, setTempItems] = useState<TempItem[]>([]);
+  const [selectedGroupId, setSelectedGroupId] = useState<string>('');
   
   useEffect(() => {
     if (showConfirmation && confirmationId) {
@@ -73,6 +82,7 @@ const NewRequest = () => {
     // Inicializa tempItems com os itens já selecionados quando o modal é aberto
     if (isItemModalOpen) {
       setTempItems([...items]);
+      setSelectedGroupId(''); // Reset da seleção do grupo quando abre o modal
     }
   }, [isItemModalOpen, items]);
   
@@ -104,7 +114,15 @@ const NewRequest = () => {
       );
     } else {
       // Se o item não existe, adicione-o
-      setTempItems([...tempItems, { id: item.id, name: item.name, quantity: 1 }]);
+      setTempItems([
+        ...tempItems, 
+        { 
+          id: item.id, 
+          name: item.name, 
+          quantity: 1,
+          unitOfMeasure: item.unitOfMeasure.abbreviation
+        }
+      ]);
     }
   };
   
@@ -115,11 +133,26 @@ const NewRequest = () => {
   const confirmItemSelection = () => {
     setItems(tempItems);
     setIsItemModalOpen(false);
+    setSelectedGroupId(''); // Reset da seleção do grupo
   };
   
-  const filteredItems = availableItems.filter(item => 
-    item.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Para a requisição, precisamos manter apenas id, quantity e itemId
+  const mapItemsForRequest = (items: TempItem[]) => {
+    return items.map(item => ({
+      id: '',  // Será gerado pelo banco
+      itemId: item.id,
+      quantity: item.quantity
+    }));
+  };
+  
+  // Filtra itens por termo de busca e grupo selecionado
+  const filteredItems = availableItems.filter(item => {
+    const matchesSearchTerm = item.name.toLowerCase().includes(searchTerm.toLowerCase());
+    // Se nenhum grupo for selecionado, retorna todos que correspondem ao termo de busca
+    if (!selectedGroupId) return matchesSearchTerm;
+    // Se um grupo for selecionado, filtra por grupo além do termo de busca
+    return matchesSearchTerm && item.group.id === selectedGroupId;
+  });
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -171,11 +204,7 @@ const NewRequest = () => {
         budgetId: budget.id,
         priority,
         userId: user.id,
-        items: items.map(item => ({
-          itemId: item.id,
-          quantity: item.quantity,
-          id: ''  // Será gerado pelo banco
-        }))
+        items: mapItemsForRequest(items)
       };
       
       const requestId = await createRequest(requestData);
@@ -215,6 +244,17 @@ const NewRequest = () => {
       resetForm();
       navigate('/'); // Redirecionando para a rota principal (Dashboard)
     }
+  };
+  
+  // Função para formatar o nome do item com a unidade de medida
+  const formatItemName = (name: string, unitOfMeasure?: string): ReactNode => {
+    if (!unitOfMeasure) return name;
+    
+    return (
+      <>
+        {name} <span className="text-muted-foreground text-xs">({unitOfMeasure})</span>
+      </>
+    );
   };
   
   return (
@@ -317,7 +357,10 @@ const NewRequest = () => {
                 <ul className="space-y-2">
                   {items.map((item, index) => (
                     <li key={index} className="flex items-center justify-between p-2 bg-white border border-teal-200 rounded-md">
-                      <span>{item.name} - Quantidade: {item.quantity}</span>
+                      <span>
+                        {formatItemName(item.name, item.unitOfMeasure)} - 
+                        Quantidade: {item.quantity}
+                      </span>
                       <Button type="button" variant="ghost" size="icon" onClick={() => handleRemoveItem(index)}>
                         <X className="h-4 w-4" />
                       </Button>
@@ -381,6 +424,25 @@ const NewRequest = () => {
               />
             </div>
             
+            {/* Lista de grupos */}
+            <div>
+              <Label htmlFor="group">Grupo</Label>
+              <Select 
+                value={selectedGroupId} 
+                onValueChange={(value) => setSelectedGroupId(value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos os grupos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todos os grupos</SelectItem>
+                  {itemGroups.map((group) => (
+                    <SelectItem key={group.id} value={group.id}>{group.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
             {/* Lista de itens disponíveis */}
             <div className="grid grid-cols-1 gap-2">
               <h4 className="text-sm font-medium">Itens Disponíveis</h4>
@@ -394,7 +456,9 @@ const NewRequest = () => {
                         key={item.id} 
                         className="flex items-center justify-between p-2 hover:bg-gray-100 rounded-md border border-gray-200"
                       >
-                        <span>{item.name}</span>
+                        <span>
+                          {item.name} <span className="text-muted-foreground text-xs">({item.unitOfMeasure.abbreviation})</span>
+                        </span>
                         <Button 
                           type="button" 
                           variant="ghost" 
@@ -423,7 +487,7 @@ const NewRequest = () => {
                         key={item.id} 
                         className="flex items-center justify-between p-2 bg-white border border-teal-200 hover:bg-teal-50 rounded-md"
                       >
-                        <span>{item.name}</span>
+                        <span>{formatItemName(item.name, item.unitOfMeasure)}</span>
                         <div className="flex items-center gap-2">
                           <div className="flex items-center border rounded-md bg-white">
                             <Button 
@@ -465,7 +529,10 @@ const NewRequest = () => {
           </div>
           
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setIsItemModalOpen(false)}>
+            <Button type="button" variant="outline" onClick={() => {
+              setIsItemModalOpen(false);
+              setSelectedGroupId('');
+            }}>
               Cancelar
             </Button>
             <Button type="button" onClick={confirmItemSelection}>

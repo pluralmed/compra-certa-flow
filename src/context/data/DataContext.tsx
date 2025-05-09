@@ -37,6 +37,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       
       try {
         setLoading(true);
+        console.log("DataContext - Carregando dados iniciais");
         
         await Promise.all([
           clientService.fetchClients(),
@@ -63,15 +64,21 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   // Fetch dependent data after initial fetch
   useEffect(() => {
     const fetchDependentData = async () => {
-      if (!fetched || clientService.clients.length === 0) return;
+      if (!fetched) return;
       
       try {
+        console.log("Iniciando carregamento de dados dependentes");
+        setLoading(true);
+        
         await Promise.all([
           unitService.fetchUnits(),
           budgetService.fetchBudgets(),
           itemService.fetchItems(),
           requestService.fetchRequests()
         ]);
+        
+        console.log("Dados dependentes carregados com sucesso");
+        setLoading(false);
       } catch (error) {
         console.error('Error fetching dependent data:', error);
         toast({
@@ -79,11 +86,17 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           description: "Não foi possível carregar todos os dados.",
           variant: "destructive",
         });
+        setLoading(false);
       }
     };
     
     fetchDependentData();
-  }, [fetched, clientService.clients]);
+  }, [fetched]);
+  
+  // Debug: verificar os itens carregados
+  useEffect(() => {
+    console.log("DataContext - items:", itemService.items);
+  }, [itemService.items]);
   
   return (
     <DataContext.Provider value={{
