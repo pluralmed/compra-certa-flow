@@ -27,7 +27,7 @@ import {
   TableHeader, 
   TableRow 
 } from '@/components/ui/table';
-import { Plus, Edit, Trash2, Search } from 'lucide-react';
+import { Plus, Edit, Power, Search } from 'lucide-react';
 import { formatPhoneNumber } from '@/utils/format';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -40,6 +40,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Switch } from "@/components/ui/switch";
 
 const sectors = [
   'Engenharia Civil',
@@ -52,11 +53,11 @@ const sectors = [
 ];
 
 const UserManagement = () => {
-  const { users, addUser, updateUser, deleteUser, user: currentUser } = useAuth();
+  const { users, addUser, updateUser, toggleUserStatus, user: currentUser } = useAuth();
   const navigate = useNavigate();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   
   // Adicionar estado para o termo de pesquisa
@@ -70,6 +71,7 @@ const UserManagement = () => {
   const [whatsapp, setWhatsapp] = useState('');
   const [sector, setSector] = useState(sectors[0]);
   const [role, setRole] = useState<'admin' | 'normal'>('normal');
+  const [status, setStatus] = useState<'ativo' | 'inativo'>('ativo');
   
   // Redirect if not admin
   if (currentUser?.role !== 'admin') {
@@ -85,6 +87,7 @@ const UserManagement = () => {
     setWhatsapp('');
     setSector(sectors[0]);
     setRole('normal');
+    setStatus('ativo');
   };
   
   const handleAddUser = () => {
@@ -96,6 +99,7 @@ const UserManagement = () => {
       whatsapp,
       sector,
       role,
+      status,
     });
     resetForm();
     setIsAddDialogOpen(false);
@@ -113,15 +117,16 @@ const UserManagement = () => {
       whatsapp,
       sector,
       role,
+      status,
     });
     resetForm();
     setIsEditDialogOpen(false);
   };
   
-  const handleDeleteUser = () => {
+  const handleToggleUserStatus = () => {
     if (!selectedUser) return;
-    deleteUser(selectedUser.id);
-    setIsDeleteDialogOpen(false);
+    toggleUserStatus(selectedUser.id);
+    setIsStatusDialogOpen(false);
   };
   
   const openEditDialog = (user: any) => {
@@ -133,12 +138,13 @@ const UserManagement = () => {
     setWhatsapp(user.whatsapp);
     setSector(user.sector);
     setRole(user.role);
+    setStatus(user.status);
     setIsEditDialogOpen(true);
   };
   
-  const openDeleteDialog = (user: any) => {
+  const openStatusDialog = (user: any) => {
     setSelectedUser(user);
-    setIsDeleteDialogOpen(true);
+    setIsStatusDialogOpen(true);
   };
   
   const handleWhatsappChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -215,7 +221,7 @@ const UserManagement = () => {
                   type="password" 
                   value={password} 
                   onChange={(e) => setPassword(e.target.value)} 
-                  placeholder="Senha"
+                  placeholder="••••••••"
                 />
               </div>
               
@@ -257,6 +263,19 @@ const UserManagement = () => {
                   </SelectContent>
                 </Select>
               </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="status">Status</Label>
+                <Select value={status} onValueChange={(value: 'ativo' | 'inativo') => setStatus(value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ativo">Ativo</SelectItem>
+                    <SelectItem value="inativo">Inativo</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             
             <DialogFooter>
@@ -292,12 +311,13 @@ const UserManagement = () => {
                 <TableHead>WhatsApp</TableHead>
                 <TableHead>Setor</TableHead>
                 <TableHead>Permissão</TableHead>
+                <TableHead>Status</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredUsers.map((user) => (
-                <TableRow key={user.id}>
+                <TableRow key={user.id} className={user.status === 'inativo' ? 'opacity-60' : ''}>
                   <TableCell className="font-medium">{user.name} {user.lastName}</TableCell>
                   <TableCell>{user.email}</TableCell>
                   <TableCell>{user.whatsapp}</TableCell>
@@ -311,6 +331,15 @@ const UserManagement = () => {
                       {user.role === 'admin' ? 'Admin' : 'Normal'}
                     </span>
                   </TableCell>
+                  <TableCell>
+                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs ${
+                      user.status === 'ativo' 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-red-100 text-red-800'
+                    }`}>
+                      {user.status === 'ativo' ? 'Ativo' : 'Inativo'}
+                    </span>
+                  </TableCell>
                   <TableCell className="text-right space-x-2">
                     <Button 
                       size="sm" 
@@ -322,17 +351,17 @@ const UserManagement = () => {
                     <Button 
                       size="sm" 
                       variant="outline"
-                      className="text-red-500 hover:text-red-700"
-                      onClick={() => openDeleteDialog(user)}
+                      className={user.status === 'ativo' ? 'text-red-500 hover:text-red-700' : 'text-green-500 hover:text-green-700'}
+                      onClick={() => openStatusDialog(user)}
                     >
-                      <Trash2 size={16} />
+                      <Power size={16} />
                     </Button>
                   </TableCell>
                 </TableRow>
               ))}
               {filteredUsers.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">
                     {searchTerm ? "Nenhum usuário encontrado com este termo de busca." : "Nenhum usuário encontrado."}
                   </TableCell>
                 </TableRow>
@@ -436,6 +465,19 @@ const UserManagement = () => {
                 </SelectContent>
               </Select>
             </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="edit-status">Status</Label>
+              <Select value={status} onValueChange={(value: 'ativo' | 'inativo') => setStatus(value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ativo">Ativo</SelectItem>
+                  <SelectItem value="inativo">Inativo</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           
           <DialogFooter>
@@ -445,22 +487,28 @@ const UserManagement = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Delete User Dialog */}
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+      {/* Toggle Status Dialog */}
+      <AlertDialog open={isStatusDialogOpen} onOpenChange={setIsStatusDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
+            <AlertDialogTitle>Confirmar alteração de status</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta ação não pode ser desfeita. O usuário será removido permanentemente do sistema.
+              {selectedUser?.status === 'ativo' 
+                ? `Tem certeza que deseja inativar o usuário ${selectedUser?.name} ${selectedUser?.lastName}?`
+                : `Tem certeza que deseja ativar o usuário ${selectedUser?.name} ${selectedUser?.lastName}?`
+              }
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction 
-              className="bg-red-500 hover:bg-red-600 text-white"
-              onClick={handleDeleteUser}
+              className={selectedUser?.status === 'ativo' 
+                ? "bg-red-500 hover:bg-red-600 text-white"
+                : "bg-green-500 hover:bg-green-600 text-white"
+              }
+              onClick={handleToggleUserStatus}
             >
-              Remover
+              {selectedUser?.status === 'ativo' ? 'Inativar' : 'Ativar'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

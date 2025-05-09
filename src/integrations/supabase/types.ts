@@ -530,6 +530,7 @@ export type Database = {
           tipo_permissao: string
           ultimo_login: string | null
           whatsapp: string
+          status: string
         }
         Insert: {
           data_criacao?: string | null
@@ -542,6 +543,7 @@ export type Database = {
           tipo_permissao: string
           ultimo_login?: string | null
           whatsapp: string
+          status?: string
         }
         Update: {
           data_criacao?: string | null
@@ -554,6 +556,7 @@ export type Database = {
           tipo_permissao?: string
           ultimo_login?: string | null
           whatsapp?: string
+          status?: string
         }
         Relationships: []
       }

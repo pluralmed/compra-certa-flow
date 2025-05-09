@@ -12,6 +12,7 @@ interface User {
   whatsapp: string;
   sector: string;
   role: 'admin' | 'normal';
+  status: 'ativo' | 'inativo';
 }
 
 // Creating a type that includes password for internal use
@@ -27,7 +28,7 @@ interface AuthContextProps {
   logout: () => void;
   addUser: (user: Omit<UserWithPassword, 'id'>) => void;
   updateUser: (user: UserWithPassword) => void;
-  deleteUser: (id: string) => void;
+  toggleUserStatus: (id: string) => void;
 }
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
@@ -58,6 +59,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           whatsapp: dbUser.whatsapp,
           sector: dbUser.setor,
           role: dbUser.tipo_permissao as 'admin' | 'normal',
+          status: (dbUser.status || 'ativo') as 'ativo' | 'inativo',
         }));
         setUsers(transformedUsers);
       }
@@ -104,6 +106,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error("Usuário não encontrado");
       }
       
+      // Verificar se a conta está inativa
+      if (userData.status === 'inativo') {
+        throw new Error("Usuário inativo");
+      }
+      
       // Verificar se a senha armazenada está em formato hash
       const isPasswordHashed = userData.senha.startsWith('$2') && userData.senha.length > 50;
       
@@ -141,6 +148,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         whatsapp: userData.whatsapp,
         sector: userData.setor,
         role: userData.tipo_permissao as 'admin' | 'normal',
+        status: (userData.status || 'ativo') as 'ativo' | 'inativo',
       };
       
       setUser(loggedInUser);
@@ -156,11 +164,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return true;
     } catch (error) {
       console.error('Login error:', error);
+      const errorMessage = error instanceof Error ? error.message : "Email ou senha incorretos";
+      
       toast({
         title: "Erro de login",
-        description: "Email ou senha incorretos.",
+        description: errorMessage === "Usuário inativo" 
+          ? "Esta conta foi desativada. Entre em contato com o administrador." 
+          : "Email ou senha incorretos.",
         variant: "destructive",
       });
+      
       setLoading(false);
       return false;
     }
@@ -189,6 +202,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           whatsapp: newUser.whatsapp,
           setor: newUser.sector,
           tipo_permissao: newUser.role,
+          status: newUser.status || 'ativo',
         })
         .select()
         .single();
@@ -204,6 +218,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           whatsapp: data.whatsapp,
           sector: data.setor,
           role: data.tipo_permissao as 'admin' | 'normal',
+          status: data.status as 'ativo' | 'inativo',
         };
         
         setUsers([...users, userWithId]);
@@ -230,7 +245,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // Verificar se a senha foi alterada comparando com o usuário atual
       const currentUser = users.find(u => u.id === updatedUser.id);
-      const passwordChanged = !currentUser || 'password' in updatedUser;
+      const passwordChanged = !currentUser || updatedUser.password;
       
       if (passwordChanged) {
         hashedPassword = await bcrypt.hash(updatedUser.password, 10);
@@ -247,6 +262,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           whatsapp: updatedUser.whatsapp,
           setor: updatedUser.sector,
           tipo_permissao: updatedUser.role,
+          status: updatedUser.status,
         })
         .eq('id', parseInt(updatedUser.id));
 
@@ -261,6 +277,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         whatsapp: updatedUser.whatsapp,
         sector: updatedUser.sector,
         role: updatedUser.role,
+        status: updatedUser.status,
       };
       
       setUsers(users.map(u => u.id === updatedUser.id ? updatedUserWithoutPassword : u));
@@ -279,31 +296,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const deleteUser = async (id: string) => {
+  const toggleUserStatus = async (id: string) => {
     try {
-      const userToDelete = users.find(u => u.id === id);
+      const userToToggle = users.find(u => u.id === id);
+      if (!userToToggle) return;
       
-      // Excluir da tabela compras_usuarios
+      // Alternar o status
+      const newStatus = userToToggle.status === 'ativo' ? 'inativo' : 'ativo';
+      
+      // Atualizar na tabela compras_usuarios
       const { error } = await supabase
         .from('compras_usuarios')
-        .delete()
+        .update({ status: newStatus })
         .eq('id', parseInt(id));
 
       if (error) throw error;
 
-      setUsers(users.filter(u => u.id !== id));
+      // Atualizar o estado local
+      setUsers(users.map(u => u.id === id ? { ...u, status: newStatus as 'ativo' | 'inativo' } : u));
       
-      if (userToDelete) {
-        toast({
-          title: "Usuário removido",
-          description: `${userToDelete.name} ${userToDelete.lastName} foi removido com sucesso.`,
-        });
-      }
+      toast({
+        title: newStatus === 'ativo' ? "Usuário ativado" : "Usuário inativado",
+        description: `${userToToggle.name} ${userToToggle.lastName} foi ${newStatus === 'ativo' ? 'ativado' : 'inativado'} com sucesso.`,
+      });
     } catch (error) {
-      console.error('Error deleting user:', error);
+      console.error('Error toggling user status:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível remover o usuário.",
+        description: "Não foi possível alterar o status do usuário.",
         variant: "destructive",
       });
     }
@@ -318,7 +338,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       logout,
       addUser,
       updateUser,
-      deleteUser,
+      toggleUserStatus,
     }}>
       {children}
     </AuthContext.Provider>
