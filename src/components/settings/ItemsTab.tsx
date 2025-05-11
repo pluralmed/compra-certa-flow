@@ -139,9 +139,17 @@ const ItemsTab: React.FC<ItemsTabProps> = ({
   
   // Form states
   const [itemName, setItemName] = useState('');
-  const [itemGroupId, setItemGroupId] = useState<string>('');
-  const [itemUnitOfMeasureId, setItemUnitOfMeasureId] = useState<string>('');
+  const [itemGroupId, setItemGroupId] = useState<string>(allItemGroups.length > 0 ? allItemGroups[0].id : '');
+  const [itemUnitOfMeasureId, setItemUnitOfMeasureId] = useState<string>(allUnitsOfMeasure.length > 0 ? allUnitsOfMeasure[0].id : '');
   const [itemAveragePrice, setItemAveragePrice] = useState('');
+  
+  // Resetar valores ao abrir/fechar modal de adicionar item
+  useEffect(() => {
+    if (isAddItemOpen) {
+      setItemGroupId(allItemGroups.length > 0 ? allItemGroups[0].id : '');
+      setItemUnitOfMeasureId(allUnitsOfMeasure.length > 0 ? allUnitsOfMeasure[0].id : '');
+    }
+  }, [isAddItemOpen, allItemGroups, allUnitsOfMeasure]);
   
   const resetItemForm = () => {
     setItemGroupId(allItemGroups.length > 0 ? allItemGroups[0].id : '');
@@ -319,14 +327,15 @@ const ItemsTab: React.FC<ItemsTabProps> = ({
                 <div className="space-y-2">
                   <Label htmlFor="itemGroup">Grupo</Label>
                   <Select 
-                    value={itemGroupId} 
+                    value={itemGroupId || (allItemGroups[0] ? allItemGroups[0].id : '')}
                     onValueChange={(value: string) => setItemGroupId(value)}
+                    disabled={allItemGroups.length === 0}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecione o grupo" />
+                      <SelectValue placeholder={allItemGroups.length === 0 ? 'Nenhum grupo disponível' : 'Selecione o grupo'} />
                     </SelectTrigger>
                     <SelectContent>
-                      {allItemGroups.map((group) => (
+                      {allItemGroups.filter(group => group.id).map((group) => (
                         <SelectItem key={group.id} value={group.id}>
                           {group.name}
                         </SelectItem>
@@ -346,14 +355,15 @@ const ItemsTab: React.FC<ItemsTabProps> = ({
                 <div className="space-y-2">
                   <Label htmlFor="itemUnitOfMeasure">Unidade de Medida</Label>
                   <Select 
-                    value={itemUnitOfMeasureId} 
+                    value={itemUnitOfMeasureId || (allUnitsOfMeasure[0] ? allUnitsOfMeasure[0].id : '')}
                     onValueChange={(value: string) => setItemUnitOfMeasureId(value)}
+                    disabled={allUnitsOfMeasure.length === 0}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecione a unidade" />
+                      <SelectValue placeholder={allUnitsOfMeasure.length === 0 ? 'Nenhuma unidade disponível' : 'Selecione a unidade'} />
                     </SelectTrigger>
                     <SelectContent>
-                      {allUnitsOfMeasure.map((unit) => (
+                      {allUnitsOfMeasure.filter(unit => unit.id).map((unit) => (
                         <SelectItem key={unit.id} value={unit.id}>
                           {unit.name} ({unit.abbreviation})
                         </SelectItem>

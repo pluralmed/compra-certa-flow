@@ -83,6 +83,9 @@ const NewRequest = () => {
     if (isItemModalOpen) {
       setTempItems([...items]);
       setSelectedGroupId(''); // Reset da seleção do grupo quando abre o modal
+    } else {
+      // Ao fechar o modal, garantir que selectedGroupId nunca fique undefined ou null
+      setSelectedGroupId('');
     }
   }, [isItemModalOpen, items]);
   
