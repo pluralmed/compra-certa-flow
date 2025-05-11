@@ -1,7 +1,9 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { Request, Client, Unit, User, Status } from '@/context/data/types';
 import { getStatusEmoji } from '@/utils/format';
 import RequestCard from './RequestCard';
+import RejectionModal from '@/components/modals/RejectionModal';
 
 interface KanbanViewProps {
   filteredRequests: Request[];
@@ -9,7 +11,7 @@ interface KanbanViewProps {
   units: Unit[];
   users: User[];
   statusList: Status[];
-  updateRequestStatus: (requestId: string, status: Status, userId: string) => void;
+  updateRequestStatus: (requestId: string, status: Status, userId: string, rejectionJustification?: string) => void;
   userId: string;
 }
 
@@ -22,6 +24,10 @@ const KanbanView = ({
   updateRequestStatus,
   userId
 }: KanbanViewProps) => {
+  // State for rejection modal
+  const [rejectionModalOpen, setRejectionModalOpen] = useState(false);
+  const [requestToReject, setRequestToReject] = useState<string | null>(null);
+  
   // Função para lidar com o drag and drop HTML5 nativo
   const handleDragStart = (e: React.DragEvent, requestId: string) => {
     // Armazenar o ID da solicitação sendo arrastada
@@ -49,7 +55,14 @@ const KanbanView = ({
     // Só atualizar se o status for diferente
     if (request.status !== newStatus) {
       console.log(`Movendo solicitação ${requestId} para status ${newStatus}`);
-      updateRequestStatus(requestId, newStatus, userId);
+      
+      // Se o novo status for "Solicitação rejeitada", abrir o modal de justificativa
+      if (newStatus === 'Solicitação rejeitada') {
+        setRequestToReject(requestId);
+        setRejectionModalOpen(true);
+      } else {
+        updateRequestStatus(requestId, newStatus, userId);
+      }
     } else {
       console.log(`Solicitação já está no status ${newStatus}, nenhuma ação necessária`);
     }
@@ -60,50 +73,72 @@ const KanbanView = ({
     e.dataTransfer.dropEffect = "move";
   };
   
+  // Handler for rejection confirmation
+  const handleRejectionConfirm = (justification: string) => {
+    if (requestToReject) {
+      updateRequestStatus(requestToReject, 'Solicitação rejeitada', userId, justification);
+      setRejectionModalOpen(false);
+      setRequestToReject(null);
+    }
+  };
+  
   return (
-    <div className="grid grid-cols-7 gap-4 overflow-x-auto pb-4">
-      {statusList.map(status => (
-        <div key={status} className="flex flex-col h-full min-w-[200px]">
-          <div className="flex items-center mb-3 bg-white p-2 rounded-lg shadow">
-            <span className="status-emoji mr-2">{getStatusEmoji(status)}</span>
-            <h3 className="font-medium text-sm">{status}</h3>
-            <span className="ml-auto bg-gray-100 text-gray-700 rounded-full h-6 w-6 flex items-center justify-center text-xs">
-              {filteredRequests.filter(r => r.status === status).length}
-            </span>
-          </div>
-          
-          <div 
-            className="bg-muted/50 p-2 rounded-lg flex-1 overflow-y-auto min-h-[300px]"
-            onDragOver={handleDragOver}
-            onDrop={(e) => handleDrop(e, status as Status)}
-          >
-            {filteredRequests
-              .filter(r => r.status === status)
-              .map(request => (
-                <div 
-                  key={request.id}
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, request.id)}
-                  className="mb-2 cursor-grab active:cursor-grabbing"
-                >
-                  <RequestCard 
-                    request={request} 
-                    clients={clients} 
-                    units={units} 
-                    users={users} 
-                  />
+    <>
+      <div className="grid grid-cols-7 gap-4 overflow-x-auto pb-4">
+        {statusList.map(status => (
+          <div key={status} className="flex flex-col h-full min-w-[200px]">
+            <div className="flex items-center mb-3 bg-white p-2 rounded-lg shadow">
+              <span className="status-emoji mr-2">{getStatusEmoji(status)}</span>
+              <h3 className="font-medium text-sm">{status}</h3>
+              <span className="ml-auto bg-gray-100 text-gray-700 rounded-full h-6 w-6 flex items-center justify-center text-xs">
+                {filteredRequests.filter(r => r.status === status).length}
+              </span>
+            </div>
+            
+            <div 
+              className="bg-muted/50 p-2 rounded-lg flex-1 overflow-y-auto min-h-[300px]"
+              onDragOver={handleDragOver}
+              onDrop={(e) => handleDrop(e, status as Status)}
+            >
+              {filteredRequests
+                .filter(r => r.status === status)
+                .map(request => (
+                  <div 
+                    key={request.id}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, request.id)}
+                    className="mb-2 cursor-grab active:cursor-grabbing"
+                  >
+                    <RequestCard 
+                      request={request} 
+                      clients={clients} 
+                      units={units} 
+                      users={users} 
+                    />
+                  </div>
+                ))
+              }
+              {filteredRequests.filter(r => r.status === status).length === 0 && (
+                <div className="flex items-center justify-center h-24 text-muted-foreground text-sm">
+                  Nenhuma solicitação
                 </div>
-              ))
-            }
-            {filteredRequests.filter(r => r.status === status).length === 0 && (
-              <div className="flex items-center justify-center h-24 text-muted-foreground text-sm">
-                Nenhuma solicitação
-              </div>
-            )}
+              )}
+            </div>
           </div>
-        </div>
-      ))}
-    </div>
+        ))}
+      </div>
+      
+      {/* Rejection Modal */}
+      <RejectionModal
+        isOpen={rejectionModalOpen}
+        onClose={() => {
+          setRejectionModalOpen(false);
+          setRequestToReject(null);
+        }}
+        onConfirm={handleRejectionConfirm}
+        requestId={requestToReject || ''}
+      />
+    </>
   );
 };
 
