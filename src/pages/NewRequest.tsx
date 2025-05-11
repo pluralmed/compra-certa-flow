@@ -41,8 +41,8 @@ const NewRequest = () => {
   useEffect(() => {
     if (showConfirmation && confirmationId) {
       const timer = setTimeout(() => {
-        setShowConfirmation(false);
-      }, 5000); // Keep the popup visible for 5 seconds
+        handleCloseConfirmation(false);
+      }, 5000);
 
       return () => clearTimeout(timer);
     }
