@@ -143,7 +143,7 @@ export interface DataContextProps {
   createRequest: (request: Omit<Request, 'id' | 'createdAt' | 'status'>) => Promise<string>;
   updateRequest: (request: Request) => void;
   deleteRequest: (id: string) => void;
-  updateRequestStatus: (id: string, status: Status, userId: string) => void;
+  updateRequestStatus: (id: string, status: Status, userId: string, rejectionJustification?: string) => void;
   getRequestById: (id: string) => Request | undefined;
   
   // Loading states
