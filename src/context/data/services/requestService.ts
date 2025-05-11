@@ -238,8 +238,7 @@ export const useRequestService = () => {
       
       // Prepare update data
       const updateData: any = { 
-        status,
-        usuario_id: parseInt(userId) // Importante: isso fará o trigger usar o ID do usuário correto
+        status
       };
       
       // If this is a rejection and justification is provided, include it
@@ -247,8 +246,7 @@ export const useRequestService = () => {
         updateData.justificativa_rejeicao = rejectionJustification;
       }
       
-      // Atualize o status e o usuário na solicitação
-      // O trigger do banco de dados irá inserir o registro no histórico
+      // Atualize apenas o status na solicitação
       const { error } = await supabase
         .from('compras_solicitacoes')
         .update(updateData)
@@ -257,6 +255,21 @@ export const useRequestService = () => {
       if (error) {
         console.error('Erro detalhado ao atualizar status:', error);
         throw error;
+      }
+
+      // Adiciona o registro de histórico manualmente
+      const { error: historyError } = await supabase
+        .from('compras_historico_status')
+        .insert({
+          solicitacao_id: parseInt(id),
+          status: status,
+          usuario_id: parseInt(userId),
+          data_criacao: new Date().toISOString()
+        });
+        
+      if (historyError) {
+        console.error('Erro ao adicionar histórico:', historyError);
+        throw historyError;
       }
 
       // Chamar o webhook para notificar a mudança de status
@@ -307,7 +320,6 @@ export const useRequestService = () => {
         ...r, 
         status,
         statusHistory,
-        userId, // Atualize também o userId da solicitação
         justificationRejection: rejectionJustification // Add the rejection justification to the request object
       } : r));
       
