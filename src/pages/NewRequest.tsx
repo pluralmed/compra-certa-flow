@@ -240,7 +240,7 @@ const NewRequest = () => {
         </CardContent>
       </Card>
 
-      <Button type="submit" className="w-full" disabled={isSubmitting}>
+      <Button type="submit" className="w-full" disabled={isSubmitting || formData.items.length === 0}>
         {isSubmitting ? "Enviando..." : "Enviar Solicitação"}
       </Button>
 

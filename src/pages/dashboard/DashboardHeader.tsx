@@ -25,7 +25,7 @@ const DashboardHeader = ({ userRole, view, setView }: DashboardHeaderProps) => {
           }
         </p>
       </div>
-      <div className="flex gap-2">
+      <div className="flex items-center gap-2">
         {userRole === 'admin' && (
           <div className="flex bg-muted rounded-lg p-1">
             <Button
@@ -44,8 +44,7 @@ const DashboardHeader = ({ userRole, view, setView }: DashboardHeaderProps) => {
             </Button>
           </div>
         )}
-        
-        <Button onClick={() => navigate('/nova-solicitacao')} className="bg-teal hover:bg-teal/90">
+        <Button onClick={() => navigate('/nova-solicitacao')} className="bg-teal hover:bg-teal/90 h-12 flex items-center">
           <Plus size={16} className="mr-2" />
           Nova Solicitação
         </Button>
