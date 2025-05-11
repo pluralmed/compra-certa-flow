@@ -24,7 +24,6 @@ export const useItemService = () => {
       const transformedItems: Item[] = data.map(item => ({
         id: item.id.toString(), // Convert to string
         name: item.nome,
-        description: item.descricao || "",
         unitOfMeasure: {
           id: item.compras_unidades_medida.id.toString(),
           name: item.compras_unidades_medida.nome,
@@ -33,7 +32,8 @@ export const useItemService = () => {
         group: {
           id: item.compras_grupos_itens.id.toString(),
           name: item.compras_grupos_itens.nome
-        }
+        },
+        averagePrice: item.valor_medio ? parseFloat(item.valor_medio) : 0
       }));
       
       setItems(transformedItems);
@@ -52,9 +52,9 @@ export const useItemService = () => {
         .from('compras_itens')
         .insert({
           nome: item.name,
-          descricao: item.description,
           unidade_medida_id: parseInt(item.unitOfMeasure.id), // Parse to integer for Supabase
-          grupo_id: parseInt(item.group.id) // Parse to integer for Supabase
+          grupo_id: parseInt(item.group.id), // Parse to integer for Supabase
+          valor_medio: item.averagePrice || 0
         })
         .select(`
           *,
@@ -69,7 +69,6 @@ export const useItemService = () => {
         const newItem: Item = {
           id: data.id.toString(),
           name: data.nome,
-          description: data.descricao || "",
           unitOfMeasure: {
             id: data.compras_unidades_medida.id.toString(),
             name: data.compras_unidades_medida.nome,
@@ -78,7 +77,8 @@ export const useItemService = () => {
           group: {
             id: data.compras_grupos_itens.id.toString(),
             name: data.compras_grupos_itens.nome
-          }
+          },
+          averagePrice: data.valor_medio ? parseFloat(data.valor_medio) : 0
         };
         
         setItems([...items, newItem]);
@@ -105,9 +105,9 @@ export const useItemService = () => {
         .from('compras_itens')
         .update({
           nome: item.name,
-          descricao: item.description,
           unidade_medida_id: parseInt(item.unitOfMeasure.id), // Parse to integer for Supabase
-          grupo_id: parseInt(item.group.id) // Parse to integer for Supabase
+          grupo_id: parseInt(item.group.id), // Parse to integer for Supabase
+          valor_medio: item.averagePrice || 0
         })
         .eq('id', parseInt(item.id)); // Parse to integer for Supabase
       
