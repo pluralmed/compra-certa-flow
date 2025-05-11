@@ -65,23 +65,36 @@ const FilterCard = ({
         </div>
       </CardHeader>
       <CardContent>
-        <div className="flex items-center justify-between gap-3">
-          {/* Filtro de ID (apenas para admin) */}
-          {currentUserRole === 'admin' && (
-            <div className="flex-1 min-w-[120px]">
-              <Label htmlFor="request-id" className="mb-2 block">ID da Solicitação</Label>
-              <Input
-                id="request-id"
-                placeholder="Buscar por ID"
-                value={filters.idFilter}
-                onChange={handleIdFilterChange}
-                inputMode="numeric"
-                className="w-full"
-                autoComplete="off"
-              />
-            </div>
-          )}
-          
+        {/* Mobile: apenas filtro de ID */}
+        <div className="flex flex-col gap-3 sm:hidden">
+          <div className="flex-1 min-w-[120px]">
+            <Label htmlFor="request-id" className="mb-2 block">ID da Solicitação</Label>
+            <Input
+              id="request-id"
+              placeholder="Buscar por ID"
+              value={filters.idFilter}
+              onChange={handleIdFilterChange}
+              inputMode="numeric"
+              className="w-full"
+              autoComplete="off"
+            />
+          </div>
+        </div>
+        {/* Desktop: todos os filtros */}
+        <div className="hidden sm:flex items-center justify-between gap-3">
+          {/* Filtro de ID (para todos os usuários) */}
+          <div className="flex-1 min-w-[120px]">
+            <Label htmlFor="request-id" className="mb-2 block">ID da Solicitação</Label>
+            <Input
+              id="request-id"
+              placeholder="Buscar por ID"
+              value={filters.idFilter}
+              onChange={handleIdFilterChange}
+              inputMode="numeric"
+              className="w-full"
+              autoComplete="off"
+            />
+          </div>
           {/* Filtro de Status */}
           <div className="flex-1 min-w-[120px]">
             <Label htmlFor="status" className="mb-2 block">Status</Label>
@@ -99,7 +112,6 @@ const FilterCard = ({
               </SelectContent>
             </Select>
           </div>
-          
           {/* Filtro de Prioridade */}
           <div className="flex-1 min-w-[120px]">
             <Label htmlFor="priority" className="mb-2 block">Prioridade</Label>
@@ -117,7 +129,6 @@ const FilterCard = ({
               </SelectContent>
             </Select>
           </div>
-          
           {/* Filtro de Solicitante (apenas para admin) */}
           {currentUserRole === 'admin' && (
             <div className="flex-1 min-w-[120px]">
@@ -137,7 +148,6 @@ const FilterCard = ({
               </Select>
             </div>
           )}
-          
           {/* Filtro de Data */}
           <div className="flex-1 min-w-[150px]">
             <Label className="mb-2 block">Período</Label>
