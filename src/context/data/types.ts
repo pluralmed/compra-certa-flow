@@ -1,3 +1,4 @@
+
 // Define types for our data models
 export type RequestType = 'Compra direta' | 'Cotação' | 'Serviço';
 export type Status = 
@@ -82,6 +83,18 @@ export interface Request {
   status: Status;
   items: RequestItem[];
   statusHistory?: StatusHistoryItem[];
+}
+
+// Add User interface export that was missing
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  lastName: string;
+  whatsapp: string;
+  sector: string;
+  role: 'admin' | 'normal';
+  status: 'ativo' | 'inativo';
 }
 
 export interface DataContextProps {
