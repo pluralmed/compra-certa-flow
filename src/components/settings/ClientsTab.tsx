@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -6,6 +6,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from '@/components/ui/card';
 import { 
   Table, 
@@ -36,7 +37,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Edit, Trash2 } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface ClientsTabProps {
   clients: any[];
@@ -60,6 +61,50 @@ const ClientsTab: React.FC<ClientsTabProps> = ({
   // Form states
   const [clientName, setClientName] = useState('');
   const [clientMunicipality, setClientMunicipality] = useState('');
+  
+  // Estado de busca
+  const [termoBusca, setTermoBusca] = useState('');
+  const [clientesFiltrados, setClientesFiltrados] = useState(clients);
+  
+  // Estados de paginação
+  const [paginaAtual, setPaginaAtual] = useState(1);
+  const ITENS_POR_PAGINA = 5;
+  const totalPaginas = Math.ceil(clientesFiltrados.length / ITENS_POR_PAGINA);
+  
+  // Atualizar clientes filtrados quando a busca mudar
+  useEffect(() => {
+    if (!termoBusca.trim()) {
+      setClientesFiltrados(clients);
+    } else {
+      const termoLowerCase = termoBusca.toLowerCase();
+      const resultado = clients.filter(client => 
+        client.name.toLowerCase().includes(termoLowerCase) || 
+        client.municipality.toLowerCase().includes(termoLowerCase)
+      );
+      setClientesFiltrados(resultado);
+    }
+    // Volta para a primeira página quando o filtro mudar
+    setPaginaAtual(1);
+  }, [termoBusca, clients]);
+  
+  // Clientes da página atual
+  const clientesPaginados = clientesFiltrados.slice(
+    (paginaAtual - 1) * ITENS_POR_PAGINA,
+    paginaAtual * ITENS_POR_PAGINA
+  );
+  
+  // Funções de navegação da paginação
+  const irParaPaginaAnterior = () => {
+    if (paginaAtual > 1) {
+      setPaginaAtual(paginaAtual - 1);
+    }
+  };
+  
+  const irParaProximaPagina = () => {
+    if (paginaAtual < totalPaginas) {
+      setPaginaAtual(paginaAtual + 1);
+    }
+  };
   
   const resetClientForm = () => {
     setClientName('');
@@ -153,6 +198,17 @@ const ClientsTab: React.FC<ClientsTabProps> = ({
           </Dialog>
         </CardHeader>
         <CardContent>
+          <div className="relative mb-4">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Buscar clientes por nome ou município..."
+              className="w-full pl-8 bg-white"
+              value={termoBusca}
+              onChange={(e) => setTermoBusca(e.target.value)}
+            />
+          </div>
+
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
@@ -163,7 +219,7 @@ const ClientsTab: React.FC<ClientsTabProps> = ({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {clients.map(client => (
+                {clientesPaginados.map(client => (
                   <TableRow key={client.id}>
                     <TableCell className="font-medium">{client.name}</TableCell>
                     <TableCell>{client.municipality}</TableCell>
@@ -186,10 +242,10 @@ const ClientsTab: React.FC<ClientsTabProps> = ({
                     </TableCell>
                   </TableRow>
                 ))}
-                {clients.length === 0 && (
+                {clientesFiltrados.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={3} className="text-center py-10 text-muted-foreground">
-                      Nenhum cliente encontrado.
+                      {termoBusca ? `Nenhum cliente encontrado para "${termoBusca}"` : "Nenhum cliente encontrado."}
                     </TableCell>
                   </TableRow>
                 )}
@@ -197,6 +253,38 @@ const ClientsTab: React.FC<ClientsTabProps> = ({
             </Table>
           </div>
         </CardContent>
+        {clientesFiltrados.length > 0 && (
+          <CardFooter className="flex items-center justify-between py-4 border-t">
+            <div className="text-sm text-muted-foreground">
+              Mostrando {clientesPaginados.length} de {clientesFiltrados.length} clientes
+              {clients.length !== clientesFiltrados.length && ` (filtrados de ${clients.length} no total)`}
+            </div>
+            
+            <div className="flex items-center gap-1">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={irParaPaginaAnterior}
+                disabled={paginaAtual === 1}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              
+              <div className="text-sm px-4 py-1 rounded border">
+                {paginaAtual} / {totalPaginas || 1}
+              </div>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={irParaProximaPagina}
+                disabled={paginaAtual === totalPaginas || totalPaginas === 0}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardFooter>
+        )}
       </Card>
       
       {/* Edit Client Dialog */}

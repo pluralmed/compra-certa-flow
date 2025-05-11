@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -6,6 +6,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from '@/components/ui/card';
 import { 
   Table, 
@@ -43,7 +44,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Edit, Trash2 } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface UnitsTabProps {
   units: any[];
@@ -71,6 +72,51 @@ const UnitsTab: React.FC<UnitsTabProps> = ({
   // Form states
   const [unitName, setUnitName] = useState('');
   const [unitClientId, setUnitClientId] = useState('');
+  
+  // Estado de busca
+  const [termoBusca, setTermoBusca] = useState('');
+  const [unidadesFiltradas, setUnidadesFiltradas] = useState(units);
+  
+  // Estados de paginação
+  const [paginaAtual, setPaginaAtual] = useState(1);
+  const ITENS_POR_PAGINA = 5;
+  const totalPaginas = Math.ceil(unidadesFiltradas.length / ITENS_POR_PAGINA);
+  
+  // Atualizar unidades filtradas quando a busca mudar
+  useEffect(() => {
+    if (!termoBusca.trim()) {
+      setUnidadesFiltradas(units);
+    } else {
+      const termoLowerCase = termoBusca.toLowerCase();
+      const resultado = units.filter(unit => {
+        const client = getClientById(unit.clientId);
+        return unit.name.toLowerCase().includes(termoLowerCase) || 
+               (client?.name.toLowerCase().includes(termoLowerCase) || false);
+      });
+      setUnidadesFiltradas(resultado);
+    }
+    // Volta para a primeira página quando o filtro mudar
+    setPaginaAtual(1);
+  }, [termoBusca, units, getClientById]);
+  
+  // Unidades da página atual
+  const unidadesPaginadas = unidadesFiltradas.slice(
+    (paginaAtual - 1) * ITENS_POR_PAGINA,
+    paginaAtual * ITENS_POR_PAGINA
+  );
+  
+  // Funções de navegação da paginação
+  const irParaPaginaAnterior = () => {
+    if (paginaAtual > 1) {
+      setPaginaAtual(paginaAtual - 1);
+    }
+  };
+  
+  const irParaProximaPagina = () => {
+    if (paginaAtual < totalPaginas) {
+      setPaginaAtual(paginaAtual + 1);
+    }
+  };
   
   const resetUnitForm = () => {
     setUnitName('');
@@ -170,6 +216,17 @@ const UnitsTab: React.FC<UnitsTabProps> = ({
           </Dialog>
         </CardHeader>
         <CardContent>
+          <div className="relative mb-4">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Buscar unidades por nome ou cliente..."
+              className="w-full pl-8 bg-white"
+              value={termoBusca}
+              onChange={(e) => setTermoBusca(e.target.value)}
+            />
+          </div>
+
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
@@ -180,7 +237,7 @@ const UnitsTab: React.FC<UnitsTabProps> = ({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {units.map(unit => {
+                {unidadesPaginadas.map(unit => {
                   const client = getClientById(unit.clientId);
                   return (
                     <TableRow key={unit.id}>
@@ -206,10 +263,10 @@ const UnitsTab: React.FC<UnitsTabProps> = ({
                     </TableRow>
                   );
                 })}
-                {units.length === 0 && (
+                {unidadesFiltradas.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={3} className="text-center py-10 text-muted-foreground">
-                      Nenhuma unidade encontrada.
+                      {termoBusca ? `Nenhuma unidade encontrada para "${termoBusca}"` : "Nenhuma unidade encontrada."}
                     </TableCell>
                   </TableRow>
                 )}
@@ -217,6 +274,38 @@ const UnitsTab: React.FC<UnitsTabProps> = ({
             </Table>
           </div>
         </CardContent>
+        {unidadesFiltradas.length > 0 && (
+          <CardFooter className="flex items-center justify-between py-4 border-t">
+            <div className="text-sm text-muted-foreground">
+              Mostrando {unidadesPaginadas.length} de {unidadesFiltradas.length} unidades
+              {units.length !== unidadesFiltradas.length && ` (filtradas de ${units.length} no total)`}
+            </div>
+            
+            <div className="flex items-center gap-1">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={irParaPaginaAnterior}
+                disabled={paginaAtual === 1}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              
+              <div className="text-sm px-4 py-1 rounded border">
+                {paginaAtual} / {totalPaginas || 1}
+              </div>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={irParaProximaPagina}
+                disabled={paginaAtual === totalPaginas || totalPaginas === 0}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardFooter>
+        )}
       </Card>
       
       {/* Edit Unit Dialog */}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -6,6 +6,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from '@/components/ui/card';
 import { 
   Table, 
@@ -43,7 +44,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Edit, Trash2 } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { formatCurrency } from '@/utils/format';
 
 interface BudgetsTabProps {
@@ -73,6 +74,51 @@ const BudgetsTab: React.FC<BudgetsTabProps> = ({
   const [budgetName, setBudgetName] = useState('');
   const [budgetClientId, setBudgetClientId] = useState('');
   const [budgetMonthlyAmount, setBudgetMonthlyAmount] = useState('');
+  
+  // Estado de busca
+  const [termoBusca, setTermoBusca] = useState('');
+  const [rubricasFiltradas, setRubricasFiltradas] = useState(budgets);
+  
+  // Estados de paginação
+  const [paginaAtual, setPaginaAtual] = useState(1);
+  const ITENS_POR_PAGINA = 5;
+  const totalPaginas = Math.ceil(rubricasFiltradas.length / ITENS_POR_PAGINA);
+  
+  // Atualizar rubricas filtradas quando a busca mudar
+  useEffect(() => {
+    if (!termoBusca.trim()) {
+      setRubricasFiltradas(budgets);
+    } else {
+      const termoLowerCase = termoBusca.toLowerCase();
+      const resultado = budgets.filter(budget => {
+        const client = getClientById(budget.clientId);
+        return budget.name.toLowerCase().includes(termoLowerCase) || 
+               (client?.name.toLowerCase().includes(termoLowerCase) || false);
+      });
+      setRubricasFiltradas(resultado);
+    }
+    // Volta para a primeira página quando o filtro mudar
+    setPaginaAtual(1);
+  }, [termoBusca, budgets, getClientById]);
+  
+  // Rubricas da página atual
+  const rubricasPaginadas = rubricasFiltradas.slice(
+    (paginaAtual - 1) * ITENS_POR_PAGINA,
+    paginaAtual * ITENS_POR_PAGINA
+  );
+  
+  // Funções de navegação da paginação
+  const irParaPaginaAnterior = () => {
+    if (paginaAtual > 1) {
+      setPaginaAtual(paginaAtual - 1);
+    }
+  };
+  
+  const irParaProximaPagina = () => {
+    if (paginaAtual < totalPaginas) {
+      setPaginaAtual(paginaAtual + 1);
+    }
+  };
   
   const resetBudgetForm = () => {
     setBudgetName('');
@@ -187,6 +233,17 @@ const BudgetsTab: React.FC<BudgetsTabProps> = ({
           </Dialog>
         </CardHeader>
         <CardContent>
+          <div className="relative mb-4">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Buscar rubricas por nome ou cliente..."
+              className="w-full pl-8 bg-white"
+              value={termoBusca}
+              onChange={(e) => setTermoBusca(e.target.value)}
+            />
+          </div>
+
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
@@ -198,7 +255,7 @@ const BudgetsTab: React.FC<BudgetsTabProps> = ({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {budgets.map(budget => {
+                {rubricasPaginadas.map(budget => {
                   const client = getClientById(budget.clientId);
                   return (
                     <TableRow key={budget.id}>
@@ -225,10 +282,10 @@ const BudgetsTab: React.FC<BudgetsTabProps> = ({
                     </TableRow>
                   );
                 })}
-                {budgets.length === 0 && (
+                {rubricasFiltradas.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={4} className="text-center py-10 text-muted-foreground">
-                      Nenhuma rubrica encontrada.
+                      {termoBusca ? `Nenhuma rubrica encontrada para "${termoBusca}"` : "Nenhuma rubrica encontrada."}
                     </TableCell>
                   </TableRow>
                 )}
@@ -236,6 +293,38 @@ const BudgetsTab: React.FC<BudgetsTabProps> = ({
             </Table>
           </div>
         </CardContent>
+        {rubricasFiltradas.length > 0 && (
+          <CardFooter className="flex items-center justify-between py-4 border-t">
+            <div className="text-sm text-muted-foreground">
+              Mostrando {rubricasPaginadas.length} de {rubricasFiltradas.length} rubricas
+              {budgets.length !== rubricasFiltradas.length && ` (filtradas de ${budgets.length} no total)`}
+            </div>
+            
+            <div className="flex items-center gap-1">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={irParaPaginaAnterior}
+                disabled={paginaAtual === 1}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              
+              <div className="text-sm px-4 py-1 rounded border">
+                {paginaAtual} / {totalPaginas || 1}
+              </div>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={irParaProximaPagina}
+                disabled={paginaAtual === totalPaginas || totalPaginas === 0}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardFooter>
+        )}
       </Card>
       
       {/* Edit Budget Dialog */}
