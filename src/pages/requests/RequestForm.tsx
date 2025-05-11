@@ -1,4 +1,3 @@
-
 import React from "react";
 import { RequestFormData } from "./types";
 import { Client, Unit, Budget, Priority, RequestType } from "@/context/data/types";
@@ -89,44 +88,60 @@ const RequestForm: React.FC<RequestFormProps> = ({
         </div>
       </div>
 
-      <div>
-        <Label htmlFor="budget">Rubrica</Label>
-        <Select
-          onValueChange={(value) =>
-            onBudgetChange(budgets.find((b) => b.id === value) || null)
-          }
-          value={budget?.id}
-          disabled={!client}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Selecione a rubrica" />
-          </SelectTrigger>
-          <SelectContent>
-            {filteredBudgets.map((budget) => (
-              <SelectItem key={budget.id} value={budget.id}>
-                {budget.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <Label htmlFor="budget">Rubrica</Label>
+          <Select
+            onValueChange={(value) =>
+              onBudgetChange(budgets.find((b) => b.id === value) || null)
+            }
+            value={budget?.id}
+            disabled={!client}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione a rubrica" />
+            </SelectTrigger>
+            <SelectContent>
+              {filteredBudgets.map((budget) => (
+                <SelectItem key={budget.id} value={budget.id}>
+                  {budget.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-      <div>
-        <Label htmlFor="type">Tipo de Solicitação</Label>
-        <Select
-          onValueChange={(value: RequestType) => onTypeChange(value)}
-          value={type}
-          defaultValue="Compra direta"
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Selecione o tipo" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Compra direta">Compra direta</SelectItem>
-            <SelectItem value="Cotação">Cotação</SelectItem>
-            <SelectItem value="Serviço">Serviço</SelectItem>
-          </SelectContent>
-        </Select>
+        <div>
+          <Label htmlFor="type">Tipo de Solicitação</Label>
+          <Select
+            onValueChange={(value: RequestType) => onTypeChange(value)}
+            value={type}
+            defaultValue="Compra direta"
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione o tipo" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Compra direta">Compra direta</SelectItem>
+              <SelectItem value="Cotação">Cotação</SelectItem>
+              <SelectItem value="Serviço">Serviço</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <Label htmlFor="priority">Prioridade</Label>
+          <Select onValueChange={(value: Priority) => onPriorityChange(value)} value={priority}>
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione a prioridade" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Moderado">Moderado</SelectItem>
+              <SelectItem value="Urgente">Urgente</SelectItem>
+              <SelectItem value="Emergencial">Emergencial</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <div>
@@ -137,20 +152,6 @@ const RequestForm: React.FC<RequestFormProps> = ({
           value={justification}
           onChange={(e) => onJustificationChange(e.target.value)}
         />
-      </div>
-
-      <div>
-        <Label htmlFor="priority">Prioridade</Label>
-        <Select onValueChange={(value: Priority) => onPriorityChange(value)} value={priority}>
-          <SelectTrigger>
-            <SelectValue placeholder="Selecione a prioridade" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Moderado">Moderado</SelectItem>
-            <SelectItem value="Urgente">Urgente</SelectItem>
-            <SelectItem value="Emergencial">Emergencial</SelectItem>
-          </SelectContent>
-        </Select>
       </div>
     </div>
   );
