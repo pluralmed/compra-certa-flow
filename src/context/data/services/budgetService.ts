@@ -40,7 +40,7 @@ export const useBudgetService = () => {
         .from('compras_rubricas')
         .insert({
           nome: budget.name,
-          cliente_id: parseInt(budget.clientId), // Fixed: Parse to integer for Supabase
+          cliente_id: parseInt(budget.clientId), // Parse to integer for Supabase
           valor_mensal: budget.monthlyAmount
         })
         .select()
@@ -80,10 +80,10 @@ export const useBudgetService = () => {
         .from('compras_rubricas')
         .update({
           nome: budget.name,
-          cliente_id: parseInt(budget.clientId), // Fixed: Parse to integer for Supabase
+          cliente_id: parseInt(budget.clientId), // Parse to integer for Supabase
           valor_mensal: budget.monthlyAmount
         })
-        .eq('id', parseInt(budget.id));
+        .eq('id', parseInt(budget.id)); // Parse to integer for Supabase
       
       if (error) throw error;
       
@@ -111,7 +111,7 @@ export const useBudgetService = () => {
       const { error } = await supabase
         .from('compras_rubricas')
         .delete()
-        .eq('id', parseInt(id));
+        .eq('id', parseInt(id)); // Parse to integer for Supabase
       
       if (error) throw error;
       

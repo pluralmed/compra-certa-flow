@@ -66,7 +66,7 @@ const NewRequest = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedItems, setSelectedItems] = useState<TempItem[]>([]);
   const [tempItems, setTempItems] = useState<TempItem[]>([]);
-  const [selectedGroupId, setSelectedGroupId] = useState<string>('');
+  const [selectedGroupId, setSelectedGroupId] = useState<string>('all'); // Changed from empty string to 'all'
   
   useEffect(() => {
     if (showConfirmation && confirmationId) {
@@ -136,7 +136,7 @@ const NewRequest = () => {
   const confirmItemSelection = () => {
     setItems(tempItems);
     setIsItemModalOpen(false);
-    setSelectedGroupId(''); // Reset da seleção do grupo
+    setSelectedGroupId('all'); // Updated to 'all' instead of empty string
   };
   
   // Para a requisição, precisamos manter apenas id, quantity e itemId
@@ -151,8 +151,8 @@ const NewRequest = () => {
   // Filtra itens por termo de busca e grupo selecionado
   const filteredItems = availableItems.filter(item => {
     const matchesSearchTerm = item.name.toLowerCase().includes(searchTerm.toLowerCase());
-    // Se nenhum grupo for selecionado, retorna todos que correspondem ao termo de busca
-    if (!selectedGroupId) return matchesSearchTerm;
+    // Se o grupo selecionado for 'all', retorna todos que correspondem ao termo de busca
+    if (selectedGroupId === 'all') return matchesSearchTerm;
     // Se um grupo for selecionado, filtra por grupo além do termo de busca
     return matchesSearchTerm && item.group.id === selectedGroupId;
   });
@@ -438,7 +438,7 @@ const NewRequest = () => {
                   <SelectValue placeholder="Todos os grupos" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos os grupos</SelectItem>
+                  <SelectItem value="all">Todos os grupos</SelectItem> {/* Changed from empty string to 'all' */}
                   {itemGroups.map((group) => (
                     <SelectItem key={group.id} value={group.id}>{group.name}</SelectItem>
                   ))}
@@ -534,7 +534,7 @@ const NewRequest = () => {
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => {
               setIsItemModalOpen(false);
-              setSelectedGroupId('');
+              setSelectedGroupId('all'); // Updated to 'all' instead of empty string
             }}>
               Cancelar
             </Button>

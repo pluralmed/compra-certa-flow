@@ -250,24 +250,24 @@ export type Database = {
       }
       compras_historico_status: {
         Row: {
+          data_criacao: string
           id: number
           solicitacao_id: number
           status: string
-          data_criacao: string
           usuario_id: number
         }
         Insert: {
+          data_criacao?: string
           id?: number
           solicitacao_id: number
           status: string
-          data_criacao?: string
           usuario_id: number
         }
         Update: {
+          data_criacao?: string
           id?: number
           solicitacao_id?: number
           status?: string
-          data_criacao?: string
           usuario_id?: number
         }
         Relationships: [
@@ -284,33 +284,33 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "compras_usuarios"
             referencedColumns: ["id"]
-          }
+          },
         ]
       }
       compras_itens: {
         Row: {
           data_criacao: string | null
-          grupo_id: number
+          grupo_id: number | null
           id: number
           nome: string
-          unidade_medida_id: number
-          valor_medio: number
+          unidade_medida_id: number | null
+          valor_medio: number | null
         }
         Insert: {
           data_criacao?: string | null
-          grupo_id: number
+          grupo_id?: number | null
           id?: number
           nome: string
-          unidade_medida_id: number
-          valor_medio: number
+          unidade_medida_id?: number | null
+          valor_medio?: number | null
         }
         Update: {
           data_criacao?: string | null
-          grupo_id?: number
+          grupo_id?: number | null
           id?: number
           nome?: string
-          unidade_medida_id?: number
-          valor_medio?: number
+          unidade_medida_id?: number | null
+          valor_medio?: number | null
         }
         Relationships: [
           {
@@ -520,43 +520,49 @@ export type Database = {
       }
       compras_usuarios: {
         Row: {
+          auth_user_id: string | null
           data_criacao: string | null
           email: string
           id: number
           nome: string
+          precisa_redefinir_senha: boolean | null
           senha: string
           setor: string
           sobrenome: string
+          status: string
           tipo_permissao: string
           ultimo_login: string | null
           whatsapp: string
-          status: string
         }
         Insert: {
+          auth_user_id?: string | null
           data_criacao?: string | null
           email: string
           id?: number
           nome: string
+          precisa_redefinir_senha?: boolean | null
           senha: string
           setor: string
           sobrenome: string
+          status?: string
           tipo_permissao: string
           ultimo_login?: string | null
           whatsapp: string
-          status?: string
         }
         Update: {
+          auth_user_id?: string | null
           data_criacao?: string | null
           email?: string
           id?: number
           nome?: string
+          precisa_redefinir_senha?: boolean | null
           senha?: string
           setor?: string
           sobrenome?: string
+          status?: string
           tipo_permissao?: string
           ultimo_login?: string | null
           whatsapp?: string
-          status?: string
         }
         Relationships: []
       }
@@ -966,7 +972,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      migrate_existing_users_to_auth: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
