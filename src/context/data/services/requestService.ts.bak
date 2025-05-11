@@ -259,9 +259,20 @@ export const useRequestService = () => {
         throw error;
       }
 
+      // Buscar informações do usuário
+      const { data: userData, error: userError } = await supabase
+        .from('compras_usuarios')
+        .select('nome, sobrenome')
+        .eq('id', parseInt(userId))
+        .single();
+
+      if (userError) {
+        console.error('Erro ao buscar dados do usuário:', userError);
+      }
+
       // Chamar o webhook para notificar a mudança de status
       try {
-        await fetch('https://n8n.ddinsights.tech/webhook/compras-pluralmed', {
+        await fetch('https://n8n.ddinsights.tech/webhook-test/compras-pluralmed', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -269,9 +280,8 @@ export const useRequestService = () => {
           body: JSON.stringify({
             requestId: id,
             status: status,
-            userId: userId,
-            rejectionJustification: rejectionJustification,
-            tipo: "Notificar Solicitante"
+            userName: userData ? `${userData.nome} ${userData.sobrenome}` : 'Usuário não encontrado',
+            rejectionJustification: rejectionJustification
           })
         });
       } catch (webhookError) {
