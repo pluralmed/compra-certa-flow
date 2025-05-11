@@ -33,7 +33,7 @@ export const useItemService = () => {
           id: item.compras_grupos_itens.id.toString(),
           name: item.compras_grupos_itens.nome
         },
-        averagePrice: item.valor_medio ? parseFloat(item.valor_medio) : 0
+        averagePrice: item.valor_medio ? parseFloat(item.valor_medio.toString()) : 0
       }));
       
       setItems(transformedItems);
@@ -78,7 +78,7 @@ export const useItemService = () => {
             id: data.compras_grupos_itens.id.toString(),
             name: data.compras_grupos_itens.nome
           },
-          averagePrice: data.valor_medio ? parseFloat(data.valor_medio) : 0
+          averagePrice: data.valor_medio ? parseFloat(data.valor_medio.toString()) : 0
         };
         
         setItems([...items, newItem]);
