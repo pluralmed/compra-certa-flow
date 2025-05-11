@@ -1,4 +1,3 @@
-
 // Define types for our data models
 export type RequestType = 'Compra direta' | 'Cotação' | 'Serviço';
 export type Status = 
@@ -83,6 +82,7 @@ export interface Request {
   status: Status;
   items: RequestItem[];
   statusHistory?: StatusHistoryItem[];
+  justificationRejection?: string; // Added field for rejection justification
 }
 
 // Add User interface export that was missing

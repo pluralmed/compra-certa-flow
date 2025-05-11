@@ -232,18 +232,26 @@ export const useRequestService = () => {
   };
   
   // Update request status
-  const updateRequestStatus = async (id: string, status: Status, userId: string) => {
+  const updateRequestStatus = async (id: string, status: Status, userId: string, rejectionJustification?: string) => {
     try {
       console.log(`Atualizando solicitação ${id} para status ${status} pelo usuário ${userId}`);
+      
+      // Prepare update data
+      const updateData: any = { 
+        status,
+        usuario_id: parseInt(userId) // Importante: isso fará o trigger usar o ID do usuário correto
+      };
+      
+      // If this is a rejection and justification is provided, include it
+      if (status === 'Solicitação rejeitada' && rejectionJustification) {
+        updateData.justificativa_rejeicao = rejectionJustification;
+      }
       
       // Atualize o status e o usuário na solicitação
       // O trigger do banco de dados irá inserir o registro no histórico
       const { error } = await supabase
         .from('compras_solicitacoes')
-        .update({ 
-          status,
-          usuario_id: parseInt(userId) // Importante: isso fará o trigger usar o ID do usuário correto
-        })
+        .update(updateData)
         .eq('id', parseInt(id));
       
       if (error) {
@@ -279,7 +287,8 @@ export const useRequestService = () => {
         ...r, 
         status,
         statusHistory,
-        userId // Atualize também o userId da solicitação
+        userId, // Atualize também o userId da solicitação
+        justificationRejection: rejectionJustification // Add the rejection justification to the request object
       } : r));
       
       toast({

@@ -406,6 +406,7 @@ export type Database = {
           data_criacao: string | null
           id: number
           justificativa: string
+          justificativa_rejeicao: string | null
           prioridade: string
           rubrica_id: number
           status: string
@@ -418,6 +419,7 @@ export type Database = {
           data_criacao?: string | null
           id?: number
           justificativa: string
+          justificativa_rejeicao?: string | null
           prioridade: string
           rubrica_id: number
           status?: string
@@ -430,6 +432,7 @@ export type Database = {
           data_criacao?: string | null
           id?: number
           justificativa?: string
+          justificativa_rejeicao?: string | null
           prioridade?: string
           rubrica_id?: number
           status?: string

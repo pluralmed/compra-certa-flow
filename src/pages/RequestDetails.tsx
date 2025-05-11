@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useData } from '@/context/data/DataContext';
@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/table';
 import StatusHistory from '@/components/status/StatusHistory';
 import { Badge } from '@/components/ui/badge';
+import RejectionModal from '@/components/modals/RejectionModal';
 
 const statusList: Status[] = [
   'Aguardando liberação',
@@ -48,6 +49,9 @@ const RequestDetails = () => {
     updateRequestStatus,
   } = useData();
   
+  const [isRejectionModalOpen, setIsRejectionModalOpen] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState<Status | null>(null);
+  
   const request = requests.find(req => req.id === id);
   
   if (!request) {
@@ -69,7 +73,21 @@ const RequestDetails = () => {
   
   const handleStatusChange = (newStatus: Status) => {
     if (user?.role !== 'admin' || !user?.id) return;
-    updateRequestStatus(request.id, newStatus, user.id);
+    
+    if (newStatus === 'Solicitação rejeitada') {
+      setSelectedStatus(newStatus);
+      setIsRejectionModalOpen(true);
+    } else {
+      updateRequestStatus(request.id, newStatus, user.id);
+    }
+  };
+  
+  const handleRejectionConfirm = (justification: string) => {
+    if (!user?.id) return;
+    
+    updateRequestStatus(request.id, 'Solicitação rejeitada', user.id, justification);
+    setIsRejectionModalOpen(false);
+    setSelectedStatus(null);
   };
   
   // Calculate total value of request
@@ -154,6 +172,16 @@ const RequestDetails = () => {
                 <h4 className="text-sm text-muted-foreground mb-1">Justificativa</h4>
                 <p className="bg-muted/50 p-4 rounded-md">{request.justification}</p>
               </div>
+
+              {/* Show rejection justification if available */}
+              {request.status === 'Solicitação rejeitada' && request.justificationRejection && (
+                <div>
+                  <h4 className="text-sm text-muted-foreground mb-1">Motivo da Rejeição</h4>
+                  <p className="bg-red-50 p-4 border border-red-100 rounded-md text-red-800">
+                    {request.justificationRejection}
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
           
@@ -281,6 +309,14 @@ const RequestDetails = () => {
           </Card>
         </div>
       </div>
+      
+      {/* Rejection Modal */}
+      <RejectionModal
+        isOpen={isRejectionModalOpen}
+        onClose={() => setIsRejectionModalOpen(false)}
+        onConfirm={handleRejectionConfirm}
+        requestId={request.id}
+      />
     </div>
   );
 };
