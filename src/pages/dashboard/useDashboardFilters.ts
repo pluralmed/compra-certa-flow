@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { DateRange } from "react-day-picker";
 
@@ -37,8 +38,8 @@ export function useDashboardFilters() {
   // Função para aceitar apenas números no filtro de ID
   const handleIdFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    // Permite apenas dígitos (números)
-    if (!value || /^\d*$/.test(value)) {
+    // Permite apenas dígitos (números) e atualiza o estado diretamente com o valor completo
+    if (value === '' || /^\d+$/.test(value)) {
       setIdFilter(value);
     }
   };
