@@ -21,7 +21,7 @@ export const useBudgetService = () => {
         id: budget.id.toString(), // Convert to string
         name: budget.nome,
         clientId: budget.cliente_id.toString(), // Convert to string
-        monthlyAmount: parseFloat(budget.valor_mensal)
+        monthlyAmount: parseFloat(budget.valor_mensal.toString())
       }));
       
       setBudgets(transformedBudgets);
@@ -53,7 +53,7 @@ export const useBudgetService = () => {
           id: data.id.toString(),
           name: data.nome,
           clientId: data.cliente_id.toString(),
-          monthlyAmount: parseFloat(data.valor_mensal)
+          monthlyAmount: parseFloat(data.valor_mensal.toString())
         };
         
         setBudgets([...budgets, newBudget]);
