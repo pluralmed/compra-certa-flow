@@ -54,7 +54,8 @@ export const useRequestService = () => {
           createdAt: request.data_criacao,
           status: request.status as Status,
           items: requestItems,
-          statusHistory
+          statusHistory,
+          justificationRejection: request.justificativa_rejeicao || undefined
         };
       }));
       
@@ -159,6 +160,21 @@ export const useRequestService = () => {
         throw new Error("Nenhum dado retornado na criação dos itens");
       }
       
+      // Criar o registro inicial no histórico de status
+      const { error: historyError } = await supabase
+        .from('compras_historico_status')
+        .insert({
+          solicitacao_id: requestData.id,
+          status: 'Aguardando liberação',
+          usuario_id: userId,
+          data_criacao: new Date().toISOString()
+        });
+        
+      if (historyError) {
+        console.error('Erro ao adicionar histórico inicial:', historyError);
+        // Não vamos interromper o fluxo se o histórico falhar
+      }
+      
       // Criar o objeto transformado para atualização do estado
       const newRequest: Request = {
         id: requestData.id.toString(),
@@ -176,7 +192,12 @@ export const useRequestService = () => {
           itemId: item.item_id.toString(),
           quantity: item.quantidade
         })),
-        statusHistory: []
+        statusHistory: [{
+          id: 'new',
+          status: 'Aguardando liberação',
+          createdAt: new Date().toISOString(),
+          userId: userId.toString()
+        }]
       };
       
       setRequests(prevRequests => [...prevRequests, newRequest]);

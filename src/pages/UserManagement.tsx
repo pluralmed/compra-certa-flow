@@ -27,7 +27,7 @@ import {
   TableHeader, 
   TableRow 
 } from '@/components/ui/table';
-import { Plus, Edit, Power, Search } from 'lucide-react';
+import { Plus, Edit, Power, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { formatPhoneNumber } from '@/utils/format';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -41,15 +41,35 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
+import { CardFooter } from '@/components/ui/card';
 
 const sectors = [
-  'Engenharia Civil',
-  'Manutenção',
-  'Engenharia Clínica',
-  'Tecnologia',
   'Administração',
+  'CCS - CENTRO DE COMPRAS E SUPRIMENTOS',
+  'CLI - CENTRO DE LOGISTICA INTEGRADA 4.0',
+  'DAD - DEPARTAMENTO ADMINISTRATIVO',
+  'DAS - DEPARTAMENTO ASSISTENCIAL',
+  'DHO - DESENVOLVIMENTO HUMANO E ORGANIZACIONAL',
+  'DIRETORIA OPERACIONAL',
+  'EGV - ESCRITÓRIO DE GERAÇÃO DE VALOR',
+  'Engenharia Clínica',
+  'Engenharia Civil',
+  'ESG',
   'Financeiro',
+  'GEC - GESTÃO DE EXPERIÊNCIA AO CLIENTE',
+  'GEF - GESTÃO ECONÔMICA - FINANCEIRA',
+  'GEP - GESTÃO DE ENSINO E PESQUISA',
+  'GMC - GESTÃO DE MELHORIA CONTÍNUA',
+  'GME - GESTÃO DE MARKETING ESTRATÉGICO',
+  'GRC - GESTÃO DE RISCO, GOVERNANÇA E COMPLIANCE',
+  'GTD - GESTÃO DE TECNOLOGIA E TRANSFORMAÇÃO DIGITAL',
+  'IGEP',
+  'IGEP CARE',
+  'Manutenção',
+  'PDI - PESQUISA, DESENVOLVIMENTO E INOVAÇÃO',
   'Recursos Humanos',
+  'SND - SERVIÇO DE NUTRIÇÃO E DIETÉTICA',
+  'Tecnologia',
 ];
 
 const UserManagement = () => {
@@ -72,6 +92,40 @@ const UserManagement = () => {
   const [sector, setSector] = useState(sectors[0]);
   const [role, setRole] = useState<'admin' | 'normal'>('normal');
   const [status, setStatus] = useState<'ativo' | 'inativo'>('ativo');
+  
+  // Ordenar usuários por nome antes de filtrar
+  const sortedUsers = [...users].sort((a, b) => {
+    const nameA = a.name.toLowerCase();
+    const nameB = b.name.toLowerCase();
+    if (nameA < nameB) return -1;
+    if (nameA > nameB) return 1;
+    return 0;
+  });
+
+  // Filtrar usuários com base no termo de pesquisa
+  const filteredUsers = sortedUsers.filter(user => 
+    `${user.name} ${user.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+  
+  // Adicionar estado para página atual
+  const [currentPage, setCurrentPage] = useState(1);
+  const usersPerPage = 10;
+  
+  // Calcular usuários da página atual
+  const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
+  const paginatedUsers = filteredUsers.slice((currentPage - 1) * usersPerPage, currentPage * usersPerPage);
+  
+  // Funções de navegação
+  const goToPage = (page: number) => {
+    if (page < 1 || page > totalPages) return;
+    setCurrentPage(page);
+  };
+  
+  // Resetar para página 1 ao filtrar
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
   
   // Redirect if not admin
   if (currentUser?.role !== 'admin') {
@@ -152,12 +206,6 @@ const UserManagement = () => {
   const handleWhatsappChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setWhatsapp(formatPhoneNumber(e.target.value));
   };
-  
-  // Filtrar usuários com base no termo de pesquisa
-  const filteredUsers = users.filter(user => 
-    `${user.name} ${user.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
   
   return (
     <div className="space-y-6">
@@ -326,7 +374,7 @@ const UserManagement = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredUsers.map((user) => (
+              {paginatedUsers.map((user) => (
                 <TableRow key={user.id} className={user.status === 'inativo' ? 'opacity-60' : ''}>
                   <TableCell className="font-medium">{user.name} {user.lastName}</TableCell>
                   <TableCell>{user.email}</TableCell>
@@ -380,6 +428,37 @@ const UserManagement = () => {
           </Table>
         </div>
       </div>
+      
+      {/* Adicionar controles de paginação abaixo da tabela */}
+      {filteredUsers.length > 0 && (
+        <CardFooter className="flex items-center justify-between py-4 border-t">
+          <div className="text-sm text-muted-foreground">
+            Mostrando {paginatedUsers.length} de {filteredUsers.length} usuários
+            {users.length !== filteredUsers.length && ` (filtrados de ${users.length} no total)`}
+          </div>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => goToPage(currentPage - 1)}
+              disabled={currentPage === 1}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <div className="text-sm px-4 py-1 rounded border">
+              {currentPage} / {totalPages || 1}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => goToPage(currentPage + 1)}
+              disabled={currentPage === totalPages || totalPages === 0}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </CardFooter>
+      )}
       
       {/* Edit User Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>

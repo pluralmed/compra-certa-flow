@@ -5,7 +5,7 @@ import { useData } from '@/context/data/DataContext';
 import { Status } from '@/context/data/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Clock, HistoryIcon } from 'lucide-react';
+import { ArrowLeft, Clock, HistoryIcon, SquarePen } from 'lucide-react';
 import { formatCurrency, formatDateTime, getStatusEmoji, getStatusColor, getPriorityColor, formatRequestType } from '@/utils/format';
 import { 
   Select,
@@ -25,6 +25,7 @@ import {
 import StatusHistory from '@/components/status/StatusHistory';
 import { Badge } from '@/components/ui/badge';
 import RejectionModal from '@/components/modals/RejectionModal';
+import ItemSelectionModal from '@/pages/requests/ItemSelectionModal';
 
 const statusList: Status[] = [
   'Aguardando liberação',
@@ -46,11 +47,14 @@ const RequestDetails = () => {
     units,
     budgets,
     items,
+    itemGroups,
     updateRequestStatus,
+    updateRequest,
   } = useData();
   
   const [isRejectionModalOpen, setIsRejectionModalOpen] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<Status | null>(null);
+  const [isEditItemsModalOpen, setIsEditItemsModalOpen] = useState(false);
   
   const request = requests.find(req => req.id === id);
   
@@ -187,11 +191,18 @@ const RequestDetails = () => {
           
           {/* Items Table */}
           <Card>
-            <CardHeader>
-              <CardTitle>Itens Solicitados</CardTitle>
-              <CardDescription>
-                Lista de itens incluídos nesta solicitação
-              </CardDescription>
+            <CardHeader className="flex flex-row items-start justify-between">
+              <div>
+                <CardTitle>Itens Solicitados</CardTitle>
+                <CardDescription>
+                  Lista de itens incluídos nesta solicitação
+                </CardDescription>
+              </div>
+              {(user?.id === request.userId || user?.role === 'admin') && (
+                <Button size="icon" variant="outline" onClick={() => setIsEditItemsModalOpen(true)}>
+                  <SquarePen size={22} />
+                </Button>
+              )}
             </CardHeader>
             <CardContent>
               <div className="border rounded-lg overflow-hidden">
@@ -317,6 +328,37 @@ const RequestDetails = () => {
         onConfirm={handleRejectionConfirm}
         requestId={request.id}
       />
+
+      {/* Modal de edição de itens */}
+      {(user?.id === request.userId || user?.role === 'admin') && (
+        <ItemSelectionModal
+          open={isEditItemsModalOpen}
+          onOpenChange={setIsEditItemsModalOpen}
+          items={request.items.map(requestItem => {
+            const item = items.find(i => i.id === requestItem.itemId);
+            return item ? {
+              id: item.id,
+              name: item.name,
+              quantity: requestItem.quantity,
+              unitOfMeasure: item.unitOfMeasure.abbreviation
+            } : null;
+          }).filter(Boolean)}
+          onConfirm={async (newItems) => {
+            // Atualizar os itens da solicitação
+            const updatedRequest = {
+              ...request,
+              items: newItems.map(tempItem => ({
+                id: '', // será ignorado no update
+                itemId: tempItem.id,
+                quantity: tempItem.quantity
+              }))
+            };
+            await updateRequest(updatedRequest);
+          }}
+          availableItems={items}
+          itemGroups={itemGroups}
+        />
+      )}
     </div>
   );
 };

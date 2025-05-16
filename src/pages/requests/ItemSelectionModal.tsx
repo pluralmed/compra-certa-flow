@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { Search } from "lucide-react";
 import { TempItem } from "./types";
@@ -114,7 +113,7 @@ const ItemSelectionModal: React.FC<ItemSelectionModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh]">
+      <DialogContent className="sm:max-w-[900px] max-h-[90vh]">
         <DialogHeader>
           <DialogTitle>Adicionar Itens</DialogTitle>
           <DialogDescription>
@@ -122,93 +121,96 @@ const ItemSelectionModal: React.FC<ItemSelectionModalProps> = ({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
-          {/* Search bar */}
-          <div className="flex items-center relative">
-            <Search className="absolute left-2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar item..."
-              className="pl-8"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
+        <div className="grid grid-cols-2 gap-6">
+          {/* Left column - Search and available items */}
+          <div className="space-y-4">
+            {/* Search bar */}
+            <div className="flex items-center relative">
+              <Search className="absolute left-2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar item..."
+                className="pl-8"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
 
-          {/* Group list */}
-          <div>
-            <Label htmlFor="group">Grupo</Label>
-            <Select
-              value={selectedGroupId}
-              onValueChange={(value) => setSelectedGroupId(value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Todos os grupos" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os grupos</SelectItem>
-                {itemGroups.map((group) => (
-                  <SelectItem key={group.id} value={group.id}>
-                    {group.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Available items list */}
-          <div className="grid grid-cols-1 gap-2">
-            <h4 className="text-sm font-medium">Itens Disponíveis</h4>
-            <ScrollArea className="h-[200px] rounded-md border border-gray-300 shadow-sm bg-white p-2">
-              {filteredItems.length === 0 ? (
-                <p className="text-center py-4 text-muted-foreground">
-                  Nenhum item encontrado
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  {filteredItems.map((item) => (
-                    <div
-                      key={item.id}
-                      className="flex items-center justify-between p-2 hover:bg-gray-100 rounded-md border border-gray-200"
-                    >
-                      <span>
-                        {item.name}{" "}
-                        <span className="text-muted-foreground text-xs">
-                          ({item.unitOfMeasure.abbreviation})
-                        </span>
-                      </span>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleAddTempItem(item)}
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
+            {/* Group list */}
+            <div>
+              <Label htmlFor="group">Grupo</Label>
+              <Select
+                value={selectedGroupId}
+                onValueChange={(value) => setSelectedGroupId(value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos os grupos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os grupos</SelectItem>
+                  {itemGroups.map((group) => (
+                    <SelectItem key={group.id} value={group.id}>
+                      {group.name}
+                    </SelectItem>
                   ))}
-                </div>
-              )}
-            </ScrollArea>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Available items list */}
+            <div className="grid grid-cols-1 gap-2">
+              <h4 className="text-sm font-medium">Itens Disponíveis</h4>
+              <ScrollArea className="h-[400px] rounded-md border border-gray-300 shadow-sm bg-white p-2">
+                {filteredItems.length === 0 ? (
+                  <p className="text-center py-4 text-muted-foreground">
+                    Nenhum item encontrado
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {filteredItems.map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex items-center justify-between p-2 hover:bg-gray-100 rounded-md border border-gray-200"
+                      >
+                        <span>
+                          {item.name}{" "}
+                          <span className="text-muted-foreground text-xs">
+                            ({item.unitOfMeasure.abbreviation})
+                          </span>
+                        </span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleAddTempItem(item)}
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </ScrollArea>
+            </div>
           </div>
 
-          {/* Selected items */}
-          <div className="grid grid-cols-1 gap-2">
+          {/* Right column - Selected items */}
+          <div className="space-y-4">
             <h4 className="text-sm font-medium">Itens Selecionados</h4>
             {tempItems.length === 0 ? (
               <p className="text-center py-4 text-muted-foreground border rounded-md">
                 Nenhum item selecionado
               </p>
             ) : (
-              <ScrollArea className="h-[200px] rounded-md border border-teal-300 shadow-sm bg-teal-50 p-2">
+              <ScrollArea className="h-[500px] rounded-md border border-gray-300 shadow-sm bg-white p-2">
                 <div className="space-y-2">
                   {tempItems.map((item) => (
                     <div
                       key={item.id}
-                      className="flex items-center justify-between p-2 bg-white border border-teal-200 hover:bg-teal-50 rounded-md"
+                      className="flex items-center justify-between p-2 hover:bg-gray-100 rounded-md border border-gray-200"
                     >
                       <span>{formatItemName(item.name, item.unitOfMeasure)}</span>
                       <div className="flex items-center gap-2">
-                        <div className="flex items-center border rounded-md bg-white">
+                        <div className="flex items-center border rounded-md">
                           <Button
                             type="button"
                             variant="ghost"
