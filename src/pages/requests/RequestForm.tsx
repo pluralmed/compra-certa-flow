@@ -41,6 +41,10 @@ const RequestForm: React.FC<RequestFormProps> = ({
   const filteredUnits = units.filter((u) => u.clientId === client?.id);
   const filteredBudgets = budgets.filter((b) => b.clientId === client?.id);
 
+  // Ordenar clientes e rubricas alfabeticamente
+  const sortedClients = [...clients].sort((a, b) => a.name.localeCompare(b.name));
+  const sortedBudgets = [...filteredBudgets].sort((a, b) => a.name.localeCompare(b.name));
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -56,7 +60,7 @@ const RequestForm: React.FC<RequestFormProps> = ({
               <SelectValue placeholder="Selecione o cliente" />
             </SelectTrigger>
             <SelectContent>
-              {clients.map((client) => (
+              {sortedClients.map((client) => (
                 <SelectItem key={client.id} value={client.id}>
                   {client.name}
                 </SelectItem>
@@ -102,7 +106,7 @@ const RequestForm: React.FC<RequestFormProps> = ({
               <SelectValue placeholder="Selecione a rubrica" />
             </SelectTrigger>
             <SelectContent>
-              {filteredBudgets.map((budget) => (
+              {sortedBudgets.map((budget) => (
                 <SelectItem key={budget.id} value={budget.id}>
                   {budget.name}
                 </SelectItem>
