@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { Search } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, Plus, X, Check, CheckCircle, XCircle } from "lucide-react";
 import { TempItem } from "./types";
-import { Item, ItemGroup } from "@/context/data/types";
+import { Item, ItemGroup, UnitOfMeasure } from "@/context/data/types";
 import {
   Dialog,
   DialogContent,
@@ -14,7 +14,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Plus, X } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -26,8 +25,8 @@ import {
 interface ItemSelectionModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  items: TempItem[];
   onConfirm: (items: TempItem[]) => void;
+  items?: TempItem[];
   availableItems: Item[];
   itemGroups: ItemGroup[];
 }
@@ -35,42 +34,62 @@ interface ItemSelectionModalProps {
 const ItemSelectionModal: React.FC<ItemSelectionModalProps> = ({
   open,
   onOpenChange,
-  items,
   onConfirm,
+  items: initialItems = [],
   availableItems,
   itemGroups,
 }) => {
+  const [tempItems, setTempItems] = useState<TempItem[]>(initialItems);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedGroupId, setSelectedGroupId] = useState<string>("all");
-  const [tempItems, setTempItems] = useState<TempItem[]>([]);
+  const [selectedGroupId, setSelectedGroupId] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 4;
 
   useEffect(() => {
-    // Initialize tempItems with the items already selected when modal is opened
     if (open) {
-      setTempItems([...items]);
-      setSelectedGroupId("all"); // Reset group selection when opening the modal
+      setTempItems([...initialItems]);
+      setSelectedGroupId("all");
     }
-  }, [open, items]);
+  }, [open, initialItems]);
 
   // Filter items by search term and selected group
   const filteredItems = availableItems.filter((item) => {
-    const matchesSearchTerm = item.name.toLowerCase().includes(searchTerm.toLowerCase());
-    // If the selected group is 'all', return all items that match the search term
-    if (selectedGroupId === "all") return matchesSearchTerm;
-    // If a group is selected, filter by group in addition to the search term
-    return matchesSearchTerm && item.group.id === selectedGroupId;
+    const matchesSearchTerm = item.name
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
+    const matchesGroup =
+      selectedGroupId === "all" || item.group.id === selectedGroupId;
+    return matchesSearchTerm && matchesGroup;
   });
+
+  // Calcular itens paginados
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedItems = filteredItems.slice(startIndex, endIndex);
+  const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+
+  // Funções de navegação
+  const goToNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const goToPreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
 
   const handleAddTempItem = (item: Item) => {
     const existingItem = tempItems.find((i) => i.id === item.id);
-
     if (existingItem) {
-      // If item already exists, just update the quantity
-      setTempItems((prevItems) =>
-        prevItems.map((i) => (i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i))
+      setTempItems(
+        tempItems.map((i) =>
+          i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i
+        )
       );
     } else {
-      // If item doesn't exist, add it
       setTempItems([
         ...tempItems,
         {
@@ -81,10 +100,6 @@ const ItemSelectionModal: React.FC<ItemSelectionModalProps> = ({
         },
       ]);
     }
-  };
-
-  const handleRemoveTempItem = (id: string) => {
-    setTempItems(tempItems.filter((item) => item.id !== id));
   };
 
   const handleUpdateQuantity = (id: string, quantity: number) => {
@@ -113,7 +128,25 @@ const ItemSelectionModal: React.FC<ItemSelectionModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[900px] max-h-[90vh]">
+      <DialogContent className="sm:max-w-[900px] max-h-[90vh]" hideCloseButton>
+        <div className="flex justify-end gap-2 absolute right-4 top-4 z-20">
+          <Button
+            variant="ghost"
+            className="min-w-[48px] min-h-[48px] p-0"
+            onClick={handleConfirm}
+            title="Confirmar"
+          >
+            <CheckCircle className="h-12 w-12 text-teal-700" />
+          </Button>
+          <Button
+            variant="ghost"
+            className="min-w-[48px] min-h-[48px] p-0"
+            onClick={() => onOpenChange(false)}
+            title="Fechar"
+          >
+            <XCircle className="h-12 w-12 text-red-500" />
+          </Button>
+        </div>
         <DialogHeader>
           <DialogTitle>Adicionar Itens</DialogTitle>
           <DialogDescription>
@@ -159,35 +192,62 @@ const ItemSelectionModal: React.FC<ItemSelectionModalProps> = ({
             {/* Available items list */}
             <div className="grid grid-cols-1 gap-2">
               <h4 className="text-sm font-medium">Itens Disponíveis</h4>
-              <ScrollArea className="h-[400px] rounded-md border border-gray-300 shadow-sm bg-white p-2">
+              <ScrollArea className="h-[320px] rounded-md border border-gray-300 shadow-sm bg-white p-2">
                 {filteredItems.length === 0 ? (
                   <p className="text-center py-4 text-muted-foreground">
                     Nenhum item encontrado
                   </p>
                 ) : (
-                  <div className="space-y-2">
-                    {filteredItems.map((item) => (
-                      <div
-                        key={item.id}
-                        className="flex items-center justify-between p-2 hover:bg-gray-100 rounded-md border border-gray-200"
-                      >
-                        <span>
-                          {item.name}{" "}
-                          <span className="text-muted-foreground text-xs">
-                            ({item.unitOfMeasure.abbreviation})
+                  <>
+                    <div className="space-y-2">
+                      {paginatedItems.map((item) => (
+                        <div
+                          key={item.id}
+                          className="flex items-center justify-between p-2 hover:bg-gray-100 rounded-md border border-gray-200"
+                        >
+                          <span>
+                            {item.name}{" "}
+                            <span className="text-muted-foreground text-xs">
+                              ({item.unitOfMeasure.abbreviation})
+                            </span>
                           </span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleAddTempItem(item)}
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                    {totalPages > 1 && (
+                      <div className="flex items-center justify-between mt-4 pt-2 border-t">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={goToPreviousPage}
+                          disabled={currentPage === 1}
+                        >
+                          <ChevronLeft className="h-4 w-4 mr-1" />
+                          Anterior
+                        </Button>
+                        <span className="text-sm text-muted-foreground">
+                          Página {currentPage} de {totalPages}
                         </span>
                         <Button
-                          type="button"
-                          variant="ghost"
+                          variant="outline"
                           size="sm"
-                          onClick={() => handleAddTempItem(item)}
+                          onClick={goToNextPage}
+                          disabled={currentPage === totalPages}
                         >
-                          <Plus className="h-4 w-4" />
+                          Próxima
+                          <ChevronRight className="h-4 w-4 ml-1" />
                         </Button>
                       </div>
-                    ))}
-                  </div>
+                    )}
+                  </>
                 )}
               </ScrollArea>
             </div>
@@ -201,7 +261,7 @@ const ItemSelectionModal: React.FC<ItemSelectionModalProps> = ({
                 Nenhum item selecionado
               </p>
             ) : (
-              <ScrollArea className="h-[500px] rounded-md border border-gray-300 shadow-sm bg-white p-2">
+              <ScrollArea className="h-[400px] rounded-md border border-gray-300 shadow-sm bg-white p-2">
                 <div className="space-y-2">
                   {tempItems.map((item) => (
                     <div
@@ -236,9 +296,12 @@ const ItemSelectionModal: React.FC<ItemSelectionModalProps> = ({
                           type="button"
                           variant="ghost"
                           size="icon"
-                          onClick={() => handleRemoveTempItem(item.id)}
+                          className="h-8 w-8 p-0"
+                          onClick={() =>
+                            setTempItems(tempItems.filter((i) => i.id !== item.id))
+                          }
                         >
-                          <X className="h-4 w-4" />
+                          <span>×</span>
                         </Button>
                       </div>
                     </div>
@@ -248,22 +311,6 @@ const ItemSelectionModal: React.FC<ItemSelectionModalProps> = ({
             )}
           </div>
         </div>
-
-        <DialogFooter>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => {
-              onOpenChange(false);
-              setSelectedGroupId("all");
-            }}
-          >
-            Cancelar
-          </Button>
-          <Button type="button" onClick={handleConfirm}>
-            Confirmar
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
