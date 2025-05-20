@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -100,6 +101,12 @@ const ItemsTab: React.FC<ItemsTabProps> = ({
   const [paginaAtual, setPaginaAtual] = useState(1);
   const totalPaginas = Math.ceil(itensFiltrados.length / ITENS_POR_PAGINA);
   
+  // Form states
+  const [itemName, setItemName] = useState('');
+  const [itemGroupId, setItemGroupId] = useState<string>('');
+  const [itemUnitOfMeasureId, setItemUnitOfMeasureId] = useState<string>('');
+  const [itemAveragePrice, setItemAveragePrice] = useState('');
+  
   // Atualizar itens filtrados quando a busca mudar
   useEffect(() => {
     if (!termoBusca.trim()) {
@@ -117,6 +124,31 @@ const ItemsTab: React.FC<ItemsTabProps> = ({
     // Volta para a primeira página quando o filtro mudar
     setPaginaAtual(1);
   }, [termoBusca, items]);
+  
+  // Inicializar valores padrão quando os dados são carregados
+  useEffect(() => {
+    if (allItemGroups.length > 0 && !itemGroupId) {
+      setItemGroupId(allItemGroups[0].id);
+    }
+    
+    if (allUnitsOfMeasure.length > 0 && !itemUnitOfMeasureId) {
+      setItemUnitOfMeasureId(allUnitsOfMeasure[0].id);
+    }
+  }, [allItemGroups, allUnitsOfMeasure, itemGroupId, itemUnitOfMeasureId]);
+  
+  // Resetar valores ao abrir/fechar modal de adicionar item
+  useEffect(() => {
+    if (isAddItemOpen) {
+      setItemName('');
+      setItemAveragePrice('');
+      if (allItemGroups.length > 0) {
+        setItemGroupId(allItemGroups[0].id);
+      }
+      if (allUnitsOfMeasure.length > 0) {
+        setItemUnitOfMeasureId(allUnitsOfMeasure[0].id);
+      }
+    }
+  }, [isAddItemOpen, allItemGroups, allUnitsOfMeasure]);
   
   // Itens da página atual
   const itensPaginados = itensFiltrados.slice(
@@ -137,36 +169,38 @@ const ItemsTab: React.FC<ItemsTabProps> = ({
     }
   };
   
-  // Form states
-  const [itemName, setItemName] = useState('');
-  const [itemGroupId, setItemGroupId] = useState<string>(allItemGroups.length > 0 ? allItemGroups[0].id : '');
-  const [itemUnitOfMeasureId, setItemUnitOfMeasureId] = useState<string>(allUnitsOfMeasure.length > 0 ? allUnitsOfMeasure[0].id : '');
-  const [itemAveragePrice, setItemAveragePrice] = useState('');
-  
-  // Resetar valores ao abrir/fechar modal de adicionar item
-  useEffect(() => {
-    if (isAddItemOpen) {
-      setItemGroupId(allItemGroups.length > 0 ? allItemGroups[0].id : '');
-      setItemUnitOfMeasureId(allUnitsOfMeasure.length > 0 ? allUnitsOfMeasure[0].id : '');
-    }
-  }, [isAddItemOpen, allItemGroups, allUnitsOfMeasure]);
-  
   const resetItemForm = () => {
-    setItemGroupId(allItemGroups.length > 0 ? allItemGroups[0].id : '');
     setItemName('');
-    setItemUnitOfMeasureId(allUnitsOfMeasure.length > 0 ? allUnitsOfMeasure[0].id : '');
     setItemAveragePrice('');
+    if (allItemGroups.length > 0) {
+      setItemGroupId(allItemGroups[0].id);
+    }
+    if (allUnitsOfMeasure.length > 0) {
+      setItemUnitOfMeasureId(allUnitsOfMeasure[0].id);
+    }
   };
   
   // Item handlers
   const handleAddItem = () => {
+    // Verificar se o nome do item foi preenchido
+    if (!itemName.trim()) {
+      console.error("Nome do item é obrigatório");
+      return;
+    }
+  
     // Encontrar o grupo selecionado pelo id
     const selectedGroup = allItemGroups.find(group => group.id === itemGroupId);
-    if (!selectedGroup) return;
+    if (!selectedGroup) {
+      console.error("Grupo não encontrado:", itemGroupId);
+      return;
+    }
     
     // Encontrar a unidade de medida selecionada pelo id
     const selectedUnitOfMeasure = allUnitsOfMeasure.find(unit => unit.id === itemUnitOfMeasureId);
-    if (!selectedUnitOfMeasure) return;
+    if (!selectedUnitOfMeasure) {
+      console.error("Unidade de medida não encontrada:", itemUnitOfMeasureId);
+      return;
+    }
     
     const group: ItemGroup = {
       id: selectedGroup.id,
@@ -179,12 +213,21 @@ const ItemsTab: React.FC<ItemsTabProps> = ({
       abbreviation: selectedUnitOfMeasure.abbreviation
     };
     
+    // Adicionar o item e fechar o modal
+    console.log("Adicionando item:", {
+      name: itemName,
+      group,
+      unitOfMeasure,
+      averagePrice: parseFloat(itemAveragePrice) || 0,
+    });
+    
     addItem({
       name: itemName,
       group,
       unitOfMeasure,
       averagePrice: parseFloat(itemAveragePrice) || 0,
     });
+    
     resetItemForm();
     setIsAddItemOpen(false);
   };
@@ -241,17 +284,6 @@ const ItemsTab: React.FC<ItemsTabProps> = ({
     setSelectedItem(item);
     setIsDeleteItemOpen(true);
   };
-  
-  // Inicializar valores padrão quando os dados são carregados
-  React.useEffect(() => {
-    if (allItemGroups.length > 0 && !itemGroupId) {
-      setItemGroupId(allItemGroups[0].id);
-    }
-    
-    if (allUnitsOfMeasure.length > 0 && !itemUnitOfMeasureId) {
-      setItemUnitOfMeasureId(allUnitsOfMeasure[0].id);
-    }
-  }, [allItemGroups, allUnitsOfMeasure, itemGroupId, itemUnitOfMeasureId]);
   
   // Debug: verificar se os itens estão sendo recebidos
   React.useEffect(() => {
@@ -327,7 +359,7 @@ const ItemsTab: React.FC<ItemsTabProps> = ({
                 <div className="space-y-2">
                   <Label htmlFor="itemGroup">Grupo</Label>
                   <Select 
-                    value={itemGroupId || (allItemGroups[0] ? allItemGroups[0].id : '')}
+                    value={itemGroupId}
                     onValueChange={(value: string) => setItemGroupId(value)}
                     disabled={allItemGroups.length === 0}
                   >
@@ -335,7 +367,7 @@ const ItemsTab: React.FC<ItemsTabProps> = ({
                       <SelectValue placeholder={allItemGroups.length === 0 ? 'Nenhum grupo disponível' : 'Selecione o grupo'} />
                     </SelectTrigger>
                     <SelectContent>
-                      {allItemGroups.filter(group => group.id).map((group) => (
+                      {allItemGroups.map((group) => (
                         <SelectItem key={group.id} value={group.id}>
                           {group.name}
                         </SelectItem>
@@ -355,7 +387,7 @@ const ItemsTab: React.FC<ItemsTabProps> = ({
                 <div className="space-y-2">
                   <Label htmlFor="itemUnitOfMeasure">Unidade de Medida</Label>
                   <Select 
-                    value={itemUnitOfMeasureId || (allUnitsOfMeasure[0] ? allUnitsOfMeasure[0].id : '')}
+                    value={itemUnitOfMeasureId}
                     onValueChange={(value: string) => setItemUnitOfMeasureId(value)}
                     disabled={allUnitsOfMeasure.length === 0}
                   >
@@ -363,7 +395,7 @@ const ItemsTab: React.FC<ItemsTabProps> = ({
                       <SelectValue placeholder={allUnitsOfMeasure.length === 0 ? 'Nenhuma unidade disponível' : 'Selecione a unidade'} />
                     </SelectTrigger>
                     <SelectContent>
-                      {allUnitsOfMeasure.filter(unit => unit.id).map((unit) => (
+                      {allUnitsOfMeasure.map((unit) => (
                         <SelectItem key={unit.id} value={unit.id}>
                           {unit.name} ({unit.abbreviation})
                         </SelectItem>

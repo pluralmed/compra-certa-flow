@@ -279,6 +279,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "compras_historico_status_solicitacao_id_fkey"
+            columns: ["solicitacao_id"]
+            isOneToOne: false
+            referencedRelation: "vw_solicitacoes_detalhadas"
+            referencedColumns: ["id_solicitacao"]
+          },
+          {
             foreignKeyName: "compras_historico_status_usuario_id_fkey"
             columns: ["usuario_id"]
             isOneToOne: false
@@ -365,6 +372,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "compras_solicitacoes"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compras_itens_solicitacao_solicitacao_id_fkey"
+            columns: ["solicitacao_id"]
+            isOneToOne: false
+            referencedRelation: "vw_solicitacoes_detalhadas"
+            referencedColumns: ["id_solicitacao"]
           },
         ]
       }
@@ -972,7 +986,20 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      vw_solicitacoes_detalhadas: {
+        Row: {
+          data_solicitacao: string | null
+          id_solicitacao: number | null
+          justificativa_rejeicao: string | null
+          nome_cliente: string | null
+          nome_rubrica: string | null
+          nome_unidade: string | null
+          nome_usuario: string | null
+          status: string | null
+          whatsapp_usuario: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       migrate_existing_users_to_auth: {
