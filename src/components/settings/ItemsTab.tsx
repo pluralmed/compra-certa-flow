@@ -50,6 +50,7 @@ import { formatCurrency } from '@/utils/format';
 import { ItemGroup, UnitOfMeasure } from '@/context/data/types';
 import { useData } from '@/context/data/DataContext';
 import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
 
 // Objeto de grupo padrão para quando não existir grupo
 const DEFAULT_GROUP: ItemGroup = {
@@ -82,6 +83,7 @@ const ItemsTab: React.FC<ItemsTabProps> = ({
 }) => {
   // Usar o contexto de dados para acessar os grupos de itens e unidades de medida
   const { itemGroups, unitsOfMeasure } = useData();
+  const { toast } = useToast();
   
   // Adicionar os valores padrão às listas, se ainda não existirem
   const allItemGroups = [DEFAULT_GROUP, ...itemGroups.filter(g => g.id !== '0')];
@@ -107,6 +109,9 @@ const ItemsTab: React.FC<ItemsTabProps> = ({
   const [itemUnitOfMeasureId, setItemUnitOfMeasureId] = useState<string>('');
   const [itemAveragePrice, setItemAveragePrice] = useState('');
   
+  // Form validation states
+  const [nameError, setNameError] = useState('');
+  
   // Atualizar itens filtrados quando a busca mudar
   useEffect(() => {
     if (!termoBusca.trim()) {
@@ -127,28 +132,21 @@ const ItemsTab: React.FC<ItemsTabProps> = ({
   
   // Inicializar valores padrão quando os dados são carregados
   useEffect(() => {
-    if (allItemGroups.length > 0 && !itemGroupId) {
+    if (allItemGroups.length > 0) {
       setItemGroupId(allItemGroups[0].id);
     }
     
-    if (allUnitsOfMeasure.length > 0 && !itemUnitOfMeasureId) {
+    if (allUnitsOfMeasure.length > 0) {
       setItemUnitOfMeasureId(allUnitsOfMeasure[0].id);
     }
-  }, [allItemGroups, allUnitsOfMeasure, itemGroupId, itemUnitOfMeasureId]);
+  }, []);
   
   // Resetar valores ao abrir/fechar modal de adicionar item
   useEffect(() => {
     if (isAddItemOpen) {
-      setItemName('');
-      setItemAveragePrice('');
-      if (allItemGroups.length > 0) {
-        setItemGroupId(allItemGroups[0].id);
-      }
-      if (allUnitsOfMeasure.length > 0) {
-        setItemUnitOfMeasureId(allUnitsOfMeasure[0].id);
-      }
+      resetItemForm();
     }
-  }, [isAddItemOpen, allItemGroups, allUnitsOfMeasure]);
+  }, [isAddItemOpen]);
   
   // Itens da página atual
   const itensPaginados = itensFiltrados.slice(
@@ -171,20 +169,43 @@ const ItemsTab: React.FC<ItemsTabProps> = ({
   
   const resetItemForm = () => {
     setItemName('');
+    setNameError('');
     setItemAveragePrice('');
-    if (allItemGroups.length > 0) {
-      setItemGroupId(allItemGroups[0].id);
+    
+    // Define um timeout pequeno para garantir que o estado seja atualizado depois que o modal estiver visível
+    setTimeout(() => {
+      if (allItemGroups.length > 0) {
+        setItemGroupId(allItemGroups[0].id);
+      }
+      if (allUnitsOfMeasure.length > 0) {
+        setItemUnitOfMeasureId(allUnitsOfMeasure[0].id);
+      }
+    }, 50);
+  };
+  
+  // Validação de formulário
+  const validateForm = () => {
+    let isValid = true;
+    
+    if (!itemName.trim()) {
+      setNameError('Nome do item é obrigatório');
+      isValid = false;
+    } else {
+      setNameError('');
     }
-    if (allUnitsOfMeasure.length > 0) {
-      setItemUnitOfMeasureId(allUnitsOfMeasure[0].id);
-    }
+    
+    return isValid;
   };
   
   // Item handlers
   const handleAddItem = () => {
-    // Verificar se o nome do item foi preenchido
-    if (!itemName.trim()) {
-      console.error("Nome do item é obrigatório");
+    // Verificar se o formulário é válido
+    if (!validateForm()) {
+      toast({
+        title: "Erro de validação",
+        description: "Por favor, preencha todos os campos obrigatórios.",
+        variant: "destructive",
+      });
       return;
     }
   
@@ -235,6 +256,11 @@ const ItemsTab: React.FC<ItemsTabProps> = ({
   const handleUpdateItem = () => {
     if (!selectedItem) return;
     
+    // Validar formulário
+    if (!validateForm()) {
+      return;
+    }
+    
     // Encontrar o grupo selecionado pelo id
     const selectedGroup = allItemGroups.find(group => group.id === itemGroupId);
     if (!selectedGroup) return;
@@ -273,24 +299,21 @@ const ItemsTab: React.FC<ItemsTabProps> = ({
   
   const openEditItemDialog = (item: any) => {
     setSelectedItem(item);
-    setItemGroupId(item.group.id);
     setItemName(item.name);
-    setItemUnitOfMeasureId(item.unitOfMeasure.id);
     setItemAveragePrice(item.averagePrice.toString());
-    setIsEditItemOpen(true);
+    
+    // Definir um pequeno tempo para garantir que o estado seja atualizado
+    setTimeout(() => {
+      setItemGroupId(item.group.id);
+      setItemUnitOfMeasureId(item.unitOfMeasure.id);
+      setIsEditItemOpen(true);
+    }, 50);
   };
   
   const openDeleteItemDialog = (item: any) => {
     setSelectedItem(item);
     setIsDeleteItemOpen(true);
   };
-  
-  // Debug: verificar se os itens estão sendo recebidos
-  React.useEffect(() => {
-    console.log("ItemsTab - items recebidos:", items);
-    console.log("ItemsTab - grupos de itens:", allItemGroups);
-    console.log("ItemsTab - unidades de medida:", allUnitsOfMeasure);
-  }, [items, allItemGroups, allUnitsOfMeasure]);
   
   // Função para renderizar a célula do grupo com destaque visual se for o grupo padrão
   const renderGroupCell = (group: ItemGroup) => {
@@ -363,7 +386,7 @@ const ItemsTab: React.FC<ItemsTabProps> = ({
                     onValueChange={(value: string) => setItemGroupId(value)}
                     disabled={allItemGroups.length === 0}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-white">
                       <SelectValue placeholder={allItemGroups.length === 0 ? 'Nenhum grupo disponível' : 'Selecione o grupo'} />
                     </SelectTrigger>
                     <SelectContent>
@@ -382,7 +405,9 @@ const ItemsTab: React.FC<ItemsTabProps> = ({
                     value={itemName} 
                     onChange={(e) => setItemName(e.target.value)} 
                     placeholder="Nome do item"
+                    className={nameError ? "border-red-500" : ""}
                   />
+                  {nameError && <p className="text-red-500 text-sm mt-1">{nameError}</p>}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="itemUnitOfMeasure">Unidade de Medida</Label>
@@ -391,7 +416,7 @@ const ItemsTab: React.FC<ItemsTabProps> = ({
                     onValueChange={(value: string) => setItemUnitOfMeasureId(value)}
                     disabled={allUnitsOfMeasure.length === 0}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-white">
                       <SelectValue placeholder={allUnitsOfMeasure.length === 0 ? 'Nenhuma unidade disponível' : 'Selecione a unidade'} />
                     </SelectTrigger>
                     <SelectContent>
@@ -530,7 +555,7 @@ const ItemsTab: React.FC<ItemsTabProps> = ({
                 value={itemGroupId} 
                 onValueChange={(value: string) => setItemGroupId(value)}
               >
-                <SelectTrigger>
+                <SelectTrigger className="bg-white">
                   <SelectValue placeholder="Selecione o grupo" />
                 </SelectTrigger>
                 <SelectContent>
@@ -549,7 +574,9 @@ const ItemsTab: React.FC<ItemsTabProps> = ({
                 value={itemName} 
                 onChange={(e) => setItemName(e.target.value)} 
                 placeholder="Nome do item"
+                className={nameError ? "border-red-500" : ""}
               />
+              {nameError && <p className="text-red-500 text-sm mt-1">{nameError}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="editItemUnitOfMeasure">Unidade de Medida</Label>
@@ -557,7 +584,7 @@ const ItemsTab: React.FC<ItemsTabProps> = ({
                 value={itemUnitOfMeasureId} 
                 onValueChange={(value: string) => setItemUnitOfMeasureId(value)}
               >
-                <SelectTrigger>
+                <SelectTrigger className="bg-white">
                   <SelectValue placeholder="Selecione a unidade" />
                 </SelectTrigger>
                 <SelectContent>
@@ -612,4 +639,4 @@ const ItemsTab: React.FC<ItemsTabProps> = ({
   );
 };
 
-export default ItemsTab; 
+export default ItemsTab;
