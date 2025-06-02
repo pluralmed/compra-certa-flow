@@ -9,95 +9,6 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      candidates: {
-        Row: {
-          address: string | null
-          birth_date: string
-          city: string | null
-          cpf: string
-          curriculum_url: string | null
-          debt_clearance_certificate_url: string | null
-          disability_description: string | null
-          document_url: string | null
-          email: string | null
-          form_id: string
-          full_name: string
-          gender: string
-          graduation_certificate_url: string | null
-          has_disability: boolean | null
-          high_school_certificate_url: string | null
-          id: string
-          marital_status: string | null
-          neighborhood: string | null
-          phone: string
-          phone_secondary: string | null
-          position_name: string
-          professional_card_url: string | null
-          submission_date: string | null
-          zip_code: string | null
-        }
-        Insert: {
-          address?: string | null
-          birth_date: string
-          city?: string | null
-          cpf: string
-          curriculum_url?: string | null
-          debt_clearance_certificate_url?: string | null
-          disability_description?: string | null
-          document_url?: string | null
-          email?: string | null
-          form_id: string
-          full_name: string
-          gender: string
-          graduation_certificate_url?: string | null
-          has_disability?: boolean | null
-          high_school_certificate_url?: string | null
-          id?: string
-          marital_status?: string | null
-          neighborhood?: string | null
-          phone: string
-          phone_secondary?: string | null
-          position_name: string
-          professional_card_url?: string | null
-          submission_date?: string | null
-          zip_code?: string | null
-        }
-        Update: {
-          address?: string | null
-          birth_date?: string
-          city?: string | null
-          cpf?: string
-          curriculum_url?: string | null
-          debt_clearance_certificate_url?: string | null
-          disability_description?: string | null
-          document_url?: string | null
-          email?: string | null
-          form_id?: string
-          full_name?: string
-          gender?: string
-          graduation_certificate_url?: string | null
-          has_disability?: boolean | null
-          high_school_certificate_url?: string | null
-          id?: string
-          marital_status?: string | null
-          neighborhood?: string | null
-          phone?: string
-          phone_secondary?: string | null
-          position_name?: string
-          professional_card_url?: string | null
-          submission_date?: string | null
-          zip_code?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "candidates_form_id_fkey"
-            columns: ["form_id"]
-            isOneToOne: false
-            referencedRelation: "forms"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       colaboradores: {
         Row: {
           active: boolean | null
@@ -619,69 +530,6 @@ export type Database = {
           },
         ]
       }
-      form_positions: {
-        Row: {
-          created_at: string | null
-          form_id: string
-          id: string
-          position_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          form_id: string
-          id?: string
-          position_id: string
-        }
-        Update: {
-          created_at?: string | null
-          form_id?: string
-          id?: string
-          position_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "form_positions_form_id_fkey"
-            columns: ["form_id"]
-            isOneToOne: false
-            referencedRelation: "forms"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "form_positions_position_id_fkey"
-            columns: ["position_id"]
-            isOneToOne: false
-            referencedRelation: "positions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      forms: {
-        Row: {
-          created_at: string | null
-          id: string
-          logo_url: string
-          name: string
-          submissions: number | null
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          logo_url: string
-          name: string
-          submissions?: number | null
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          logo_url?: string
-          name?: string
-          submissions?: number | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
       indicators: {
         Row: {
           created_at: string | null
@@ -797,24 +645,6 @@ export type Database = {
         }
         Relationships: []
       }
-      positions: {
-        Row: {
-          created_at: string | null
-          id: string
-          name: string
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          name: string
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          name?: string
-        }
-        Relationships: []
-      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -892,6 +722,338 @@ export type Database = {
           },
         ]
       }
+      qualidade_auditorias: {
+        Row: {
+          data_fim: string | null
+          data_inicio: string | null
+          data_registro: string
+          descricao: string
+          id: number
+          responsavel: string
+          resultado: string | null
+          status: string
+          tipo: string
+          titulo: string
+          user_id: string | null
+        }
+        Insert: {
+          data_fim?: string | null
+          data_inicio?: string | null
+          data_registro?: string
+          descricao: string
+          id?: never
+          responsavel: string
+          resultado?: string | null
+          status?: string
+          tipo: string
+          titulo: string
+          user_id?: string | null
+        }
+        Update: {
+          data_fim?: string | null
+          data_inicio?: string | null
+          data_registro?: string
+          descricao?: string
+          id?: never
+          responsavel?: string
+          resultado?: string | null
+          status?: string
+          tipo?: string
+          titulo?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      qualidade_calibracoes: {
+        Row: {
+          certificado_url: string | null
+          data_registro: string
+          equipamento: string
+          id: number
+          localizacao: string | null
+          numero_serie: string | null
+          observacoes: string | null
+          proxima_calibracao: string | null
+          responsavel: string | null
+          status: string
+          ultima_calibracao: string | null
+          user_id: string | null
+        }
+        Insert: {
+          certificado_url?: string | null
+          data_registro?: string
+          equipamento: string
+          id?: never
+          localizacao?: string | null
+          numero_serie?: string | null
+          observacoes?: string | null
+          proxima_calibracao?: string | null
+          responsavel?: string | null
+          status?: string
+          ultima_calibracao?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          certificado_url?: string | null
+          data_registro?: string
+          equipamento?: string
+          id?: never
+          localizacao?: string | null
+          numero_serie?: string | null
+          observacoes?: string | null
+          proxima_calibracao?: string | null
+          responsavel?: string | null
+          status?: string
+          ultima_calibracao?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      qualidade_documentos: {
+        Row: {
+          caminho_arquivo: string | null
+          data_atualizacao: string
+          data_criacao: string
+          id: number
+          status: string
+          tipo: string
+          titulo: string
+          user_id: string | null
+          versao: string
+        }
+        Insert: {
+          caminho_arquivo?: string | null
+          data_atualizacao?: string
+          data_criacao?: string
+          id?: never
+          status?: string
+          tipo: string
+          titulo: string
+          user_id?: string | null
+          versao: string
+        }
+        Update: {
+          caminho_arquivo?: string | null
+          data_atualizacao?: string
+          data_criacao?: string
+          id?: never
+          status?: string
+          tipo?: string
+          titulo?: string
+          user_id?: string | null
+          versao?: string
+        }
+        Relationships: []
+      }
+      qualidade_indicadores: {
+        Row: {
+          data_atualizacao: string
+          data_registro: string
+          descricao: string
+          id: number
+          meta: number | null
+          nome: string
+          periodicidade: string
+          responsavel: string | null
+          unidade: string
+          user_id: string | null
+          valor_atual: number | null
+        }
+        Insert: {
+          data_atualizacao?: string
+          data_registro?: string
+          descricao: string
+          id?: never
+          meta?: number | null
+          nome: string
+          periodicidade: string
+          responsavel?: string | null
+          unidade: string
+          user_id?: string | null
+          valor_atual?: number | null
+        }
+        Update: {
+          data_atualizacao?: string
+          data_registro?: string
+          descricao?: string
+          id?: never
+          meta?: number | null
+          nome?: string
+          periodicidade?: string
+          responsavel?: string | null
+          unidade?: string
+          user_id?: string | null
+          valor_atual?: number | null
+        }
+        Relationships: []
+      }
+      qualidade_nao_conformidades: {
+        Row: {
+          area: string
+          data_encerramento: string | null
+          data_registro: string
+          descricao: string
+          id: number
+          prioridade: string
+          responsavel: string | null
+          status: string
+          titulo: string
+          user_id: string | null
+        }
+        Insert: {
+          area: string
+          data_encerramento?: string | null
+          data_registro?: string
+          descricao: string
+          id?: never
+          prioridade: string
+          responsavel?: string | null
+          status?: string
+          titulo: string
+          user_id?: string | null
+        }
+        Update: {
+          area?: string
+          data_encerramento?: string | null
+          data_registro?: string
+          descricao?: string
+          id?: never
+          prioridade?: string
+          responsavel?: string | null
+          status?: string
+          titulo?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      qualidade_registro_indicadores: {
+        Row: {
+          data_registro: string
+          id: number
+          indicador_id: number | null
+          observacao: string | null
+          user_id: string | null
+          valor: number
+        }
+        Insert: {
+          data_registro?: string
+          id?: never
+          indicador_id?: number | null
+          observacao?: string | null
+          user_id?: string | null
+          valor: number
+        }
+        Update: {
+          data_registro?: string
+          id?: never
+          indicador_id?: number | null
+          observacao?: string | null
+          user_id?: string | null
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "qualidade_registro_indicadores_indicador_id_fkey"
+            columns: ["indicador_id"]
+            isOneToOne: false
+            referencedRelation: "qualidade_indicadores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      qualidade_riscos: {
+        Row: {
+          categoria: string
+          data_atualizacao: string
+          data_registro: string
+          descricao: string
+          id: number
+          impacto: string
+          nivel_risco: string
+          probabilidade: string
+          responsavel: string | null
+          status: string
+          titulo: string
+          user_id: string | null
+        }
+        Insert: {
+          categoria: string
+          data_atualizacao?: string
+          data_registro?: string
+          descricao: string
+          id?: never
+          impacto: string
+          nivel_risco: string
+          probabilidade: string
+          responsavel?: string | null
+          status?: string
+          titulo: string
+          user_id?: string | null
+        }
+        Update: {
+          categoria?: string
+          data_atualizacao?: string
+          data_registro?: string
+          descricao?: string
+          id?: never
+          impacto?: string
+          nivel_risco?: string
+          probabilidade?: string
+          responsavel?: string | null
+          status?: string
+          titulo?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      qualidade_usuarios: {
+        Row: {
+          ativo: boolean
+          auth_user_id: string
+          cargo: string | null
+          data_atualizacao: string
+          data_registro: string
+          departamento: string | null
+          email: string
+          id: number
+          nome: string
+          sobrenome: string
+          telefone: string | null
+          tipo_acesso: string
+          ultimo_login: string | null
+        }
+        Insert: {
+          ativo?: boolean
+          auth_user_id: string
+          cargo?: string | null
+          data_atualizacao?: string
+          data_registro?: string
+          departamento?: string | null
+          email: string
+          id?: never
+          nome: string
+          sobrenome: string
+          telefone?: string | null
+          tipo_acesso?: string
+          ultimo_login?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          auth_user_id?: string
+          cargo?: string | null
+          data_atualizacao?: string
+          data_registro?: string
+          departamento?: string | null
+          email?: string
+          id?: never
+          nome?: string
+          sobrenome?: string
+          telefone?: string | null
+          tipo_acesso?: string
+          ultimo_login?: string | null
+        }
+        Relationships: []
+      }
       tasks: {
         Row: {
           created_at: string | null
@@ -960,6 +1122,362 @@ export type Database = {
           last_login?: string | null
           password?: string
           username?: string
+        }
+        Relationships: []
+      }
+      vagas_candidaturas: {
+        Row: {
+          avaliado_por: string | null
+          cargo_id: number
+          cpf: string | null
+          created_at: string | null
+          data_avaliacao: string | null
+          data_inscricao: string | null
+          data_nascimento: string | null
+          descricao_deficiencia: string | null
+          documentos: Json | null
+          email: string
+          endereco: Json | null
+          escolaridade: string | null
+          estado_civil: string | null
+          etnia: string | null
+          experiencia_profissional: string | null
+          formulario_id: number
+          genero: string | null
+          id: number
+          nome_completo: string
+          observacoes: string | null
+          possui_deficiencia: boolean | null
+          status: string
+          telefone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          avaliado_por?: string | null
+          cargo_id: number
+          cpf?: string | null
+          created_at?: string | null
+          data_avaliacao?: string | null
+          data_inscricao?: string | null
+          data_nascimento?: string | null
+          descricao_deficiencia?: string | null
+          documentos?: Json | null
+          email: string
+          endereco?: Json | null
+          escolaridade?: string | null
+          estado_civil?: string | null
+          etnia?: string | null
+          experiencia_profissional?: string | null
+          formulario_id: number
+          genero?: string | null
+          id?: never
+          nome_completo: string
+          observacoes?: string | null
+          possui_deficiencia?: boolean | null
+          status?: string
+          telefone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          avaliado_por?: string | null
+          cargo_id?: number
+          cpf?: string | null
+          created_at?: string | null
+          data_avaliacao?: string | null
+          data_inscricao?: string | null
+          data_nascimento?: string | null
+          descricao_deficiencia?: string | null
+          documentos?: Json | null
+          email?: string
+          endereco?: Json | null
+          escolaridade?: string | null
+          estado_civil?: string | null
+          etnia?: string | null
+          experiencia_profissional?: string | null
+          formulario_id?: number
+          genero?: string | null
+          id?: never
+          nome_completo?: string
+          observacoes?: string | null
+          possui_deficiencia?: boolean | null
+          status?: string
+          telefone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vagas_candidaturas_cargo_id_fkey"
+            columns: ["cargo_id"]
+            isOneToOne: false
+            referencedRelation: "vagas_cargos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vagas_candidaturas_formulario_id_fkey"
+            columns: ["formulario_id"]
+            isOneToOne: false
+            referencedRelation: "vagas_formularios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vagas_cargos: {
+        Row: {
+          created_at: string | null
+          id: number
+          nome: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: never
+          nome: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: never
+          nome?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      vagas_configuracoes: {
+        Row: {
+          chave: string
+          created_at: string | null
+          descricao: string | null
+          id: number
+          updated_at: string | null
+          valor: string
+        }
+        Insert: {
+          chave: string
+          created_at?: string | null
+          descricao?: string | null
+          id?: never
+          updated_at?: string | null
+          valor: string
+        }
+        Update: {
+          chave?: string
+          created_at?: string | null
+          descricao?: string | null
+          id?: never
+          updated_at?: string | null
+          valor?: string
+        }
+        Relationships: []
+      }
+      vagas_empresas: {
+        Row: {
+          created_at: string | null
+          id: number
+          logo: string | null
+          nome: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          logo?: string | null
+          nome: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          logo?: string | null
+          nome?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      vagas_formularios: {
+        Row: {
+          created_at: string | null
+          data_inicio: string
+          data_termino: string
+          descricao: string | null
+          edital: string
+          empresa_id: number | null
+          id: number
+          link_publico: string | null
+          municipio_id: number | null
+          status: string
+          total_candidaturas: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          data_inicio?: string
+          data_termino: string
+          descricao?: string | null
+          edital: string
+          empresa_id?: number | null
+          id?: never
+          link_publico?: string | null
+          municipio_id?: number | null
+          status?: string
+          total_candidaturas?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          data_inicio?: string
+          data_termino?: string
+          descricao?: string | null
+          edital?: string
+          empresa_id?: number | null
+          id?: never
+          link_publico?: string | null
+          municipio_id?: number | null
+          status?: string
+          total_candidaturas?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_vagas_formularios_municipio"
+            columns: ["municipio_id"]
+            isOneToOne: false
+            referencedRelation: "vagas_municipios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vagas_formularios_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "vagas_empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vagas_formularios_cargos: {
+        Row: {
+          cargo_id: number
+          created_at: string | null
+          formulario_id: number
+          id: number
+        }
+        Insert: {
+          cargo_id: number
+          created_at?: string | null
+          formulario_id: number
+          id?: number
+        }
+        Update: {
+          cargo_id?: number
+          created_at?: string | null
+          formulario_id?: number
+          id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vagas_formularios_cargos_cargo_id_fkey"
+            columns: ["cargo_id"]
+            isOneToOne: false
+            referencedRelation: "vagas_cargos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vagas_formularios_cargos_formulario_id_fkey"
+            columns: ["formulario_id"]
+            isOneToOne: false
+            referencedRelation: "vagas_formularios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vagas_historico_status: {
+        Row: {
+          alterado_por: string | null
+          candidatura_id: number
+          data_alteracao: string | null
+          id: number
+          observacao: string | null
+          status_anterior: string | null
+          status_novo: string
+        }
+        Insert: {
+          alterado_por?: string | null
+          candidatura_id: number
+          data_alteracao?: string | null
+          id?: never
+          observacao?: string | null
+          status_anterior?: string | null
+          status_novo: string
+        }
+        Update: {
+          alterado_por?: string | null
+          candidatura_id?: number
+          data_alteracao?: string | null
+          id?: never
+          observacao?: string | null
+          status_anterior?: string | null
+          status_novo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vagas_historico_status_candidatura_id_fkey"
+            columns: ["candidatura_id"]
+            isOneToOne: false
+            referencedRelation: "vagas_candidaturas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vagas_municipios: {
+        Row: {
+          created_at: string | null
+          id: number
+          nome: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          nome: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          nome?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      vagas_usuarios: {
+        Row: {
+          auth_user_id: string | null
+          created_at: string | null
+          email: string
+          id: number
+          nome: string
+          sobrenome: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          auth_user_id?: string | null
+          created_at?: string | null
+          email: string
+          id?: never
+          nome: string
+          sobrenome: string
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          auth_user_id?: string | null
+          created_at?: string | null
+          email?: string
+          id?: never
+          nome?: string
+          sobrenome?: string
+          status?: string
+          updated_at?: string | null
         }
         Relationships: []
       }

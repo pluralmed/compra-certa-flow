@@ -55,6 +55,7 @@ const RequestDetails = () => {
   const [isRejectionModalOpen, setIsRejectionModalOpen] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<Status | null>(null);
   const [isEditItemsModalOpen, setIsEditItemsModalOpen] = useState(false);
+  const [isEditRequestModalOpen, setIsEditRequestModalOpen] = useState(false);
   
   const request = requests.find(req => req.id === id);
   
@@ -125,8 +126,15 @@ const RequestDetails = () => {
         <div className="md:col-span-2 space-y-6">
           {/* Request Info */}
           <Card>
-            <CardHeader>
-              <CardTitle>Informações da Solicitação</CardTitle>
+            <CardHeader className="flex flex-row items-start justify-between">
+              <div>
+                <CardTitle>Informações da Solicitação</CardTitle>
+              </div>
+              {user?.role === 'admin' && (
+                <Button size="icon" variant="outline" onClick={() => setIsEditRequestModalOpen(true)}>
+                  <SquarePen size={22} />
+                </Button>
+              )}
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
