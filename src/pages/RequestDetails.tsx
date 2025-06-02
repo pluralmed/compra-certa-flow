@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -25,6 +26,7 @@ import {
 import StatusHistory from '@/components/status/StatusHistory';
 import { Badge } from '@/components/ui/badge';
 import RejectionModal from '@/components/modals/RejectionModal';
+import RequestEditModal from '@/components/modals/RequestEditModal';
 import ItemSelectionModal from '@/pages/requests/ItemSelectionModal';
 
 const statusList: Status[] = [
@@ -93,6 +95,10 @@ const RequestDetails = () => {
     updateRequestStatus(request.id, 'Solicitação rejeitada', user.id, justification);
     setIsRejectionModalOpen(false);
     setSelectedStatus(null);
+  };
+
+  const handleRequestEditConfirm = (updatedRequest: any) => {
+    updateRequest(updatedRequest);
   };
   
   // Calculate total value of request
@@ -336,6 +342,16 @@ const RequestDetails = () => {
         onConfirm={handleRejectionConfirm}
         requestId={request.id}
       />
+
+      {/* Request Edit Modal */}
+      {user?.role === 'admin' && (
+        <RequestEditModal
+          isOpen={isEditRequestModalOpen}
+          onClose={() => setIsEditRequestModalOpen(false)}
+          request={request}
+          onConfirm={handleRequestEditConfirm}
+        />
+      )}
 
       {/* Modal de edição de itens */}
       {(user?.id === request.userId || user?.role === 'admin') && (
